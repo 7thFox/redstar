@@ -8,9 +8,9 @@
 #include <stdlib.h>
 
 typedef struct {
+    char *text;
     Token *tokens;
-    size_t length;
-    size_t capacity;
+    size_t n_tokens;
 } LexResult;
 
 LexResult lex_file(FILE *f);

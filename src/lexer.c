@@ -85,10 +85,8 @@ LexResult lex_file(FILE *f) {
 
     LexResult r;
     r.tokens = l.token_buffer;
-    r.length = l.token_count;
-    r.capacity = l.buffer_max;
-
-    free(l.text);
+    r.n_tokens = l.token_count;
+    r.text = l.text;
 
     return r;
 }

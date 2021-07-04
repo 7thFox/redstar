@@ -1,5 +1,6 @@
 #include "headers/common.h"
 #include "headers/lexer.h"
+#include "headers/ast.h"
 
 #include "dirent.h"
 #include "stdio.h"
@@ -9,6 +10,7 @@
 typedef struct {
     char *dir_path;
     bool is_debug;
+    bool printlex;
 } program_args;
 
 int parseFile(const char *filePath);
@@ -44,6 +46,8 @@ int main(int argc, char ** argv) {
         }
     }
     closedir(dr);
+
+    print_ast();
 }
 
 int parseArgs(int argc, char ** argv){
@@ -53,6 +57,9 @@ int parseArgs(int argc, char ** argv){
         if (strcmp(argv[i], "-debug") == 0) {
             debugf(VERBOSITY_HIGH, "DEBUG\n");
             args.is_debug = 1;
+        }
+        else if (strcmp(argv[i], "-printlex") == 0) {
+            args.printlex = 1;
         }
         else {
             if (i != argc - 1) return 1;
@@ -76,19 +83,23 @@ int parseFile(const char* filePath) {
     }
 
     LexResult r = lex_file(f);
+    fclose(f);
 
-    printf("Lexed Tokens:\n");
-    for (int i = 0; i < r.length; i++) {
-        if (r.tokens[i].type == LEX_ERROR)
-            printf("ERR ");
-        else if (r.tokens[i].type <= 255)
-            printf("%c ", r.tokens[i].type);
-        else
-            printf("%i ", r.tokens[i].type);
+    if (args.printlex) {
+        printf("Lexed Tokens:\n");
+        for (int i = 0; i < r.n_tokens; i++) {
+            if (r.tokens[i].type == LEX_ERROR)
+                printf("ERR ");
+            else if (r.tokens[i].type <= 255)
+                printf("%c ", r.tokens[i].type);
+            else
+                printf("%i ", r.tokens[i].type);
+        }
+        printf("\n");
     }
-    printf("\n");
+
+    int comp_unit_index = build_compliation_unit(&r, filePath);
 
     free(r.tokens);
-
-    fclose(f);
+    free(r.text);
 }
