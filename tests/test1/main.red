@@ -4,7 +4,7 @@ use core/rand
 attr NonZero
 
 func divide(num: int, denom: [NonZero] int) int {// aliased by compiler?
-    return num / denom
+    return num / denom;
 }
 
 x := rand_int();

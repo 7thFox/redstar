@@ -34,8 +34,8 @@ bool try_parse_char_literal(Lexer *l, char lit);
 bool eat_inline_whitespace(Lexer *l);
 bool eat_whitespace(Lexer *l);
 bool try_eat_comment(Lexer *l);
-void error(Lexer *l);
-static inline bool required(Lexer *l, bool ret_val);
+void error(Lexer *l, const char * msg);
+static inline bool required(Lexer *l, bool ret_val, const char * desc);
 
 // states
 bool parse_use(Lexer *l);
@@ -78,7 +78,7 @@ LexResult lex_file(FILE *f) {
     while (parse_use(&l));// move to statemetn?
     while (l.current.ind < l.text_size - 1) {// TODO: might be off by 1 or 2?
         if (!parse_statement(&l)) {
-            error(&l);
+            error(&l, "Unexpected EOF");
             break;
         }
     };
@@ -232,13 +232,17 @@ bool try_parse_char_literal(Lexer *l, char lit) {
     return false;
 }
 
-void error(Lexer *l) {
+void error(Lexer *l, const char * msg) {
     start_token(l);
     emit_token(l, LEX_ERROR);
+    fprintf(stderr, "ERROR on %i,%i: %s\n", l->current.line, l->current.col, msg);
 }
 
-static inline bool required(Lexer *l, bool ret_val) {
-    if (!ret_val) error(l);
+static inline bool required(Lexer *l, bool ret_val, const char * desc) {
+    if (!ret_val) {
+        char msg[256] = "Expected ";
+        error(l, strcat(msg, desc));
+    }
     return ret_val;
 }
 
@@ -276,7 +280,7 @@ bool parse_attr_def(Lexer *l) {
         parse_ident(l);
         if (try_parse_char_literal(l, '{')) {
             // TODO
-            required(l, try_parse_char_literal(l, '}'));
+            required(l, try_parse_char_literal(l, '}'), "}");
         }
         return true;
     }
@@ -304,13 +308,15 @@ bool parse_func_def(Lexer *l) {
     if (try_parse_reserved_word(l, TOK_FUNC, "func"))
     {
         parse_ident(l);
-        required(l, try_parse_char_literal(l, '('));
-        while (parse_param_def(l) && try_parse_char_literal(l, ','));
-        required(l, try_parse_char_literal(l, ')'));
+        required(l, try_parse_char_literal(l, '('), "(");
+        if (parse_param_def(l)){
+            while (try_parse_char_literal(l, ',') && required(l, parse_param_def(l), "parameter definition"));
+        }
+        required(l, try_parse_char_literal(l, ')'), ")");
         parse_type_name(l);// return type
-        required(l, try_parse_char_literal(l, '{'));
+        required(l, try_parse_char_literal(l, '{'), "{");
         while (parse_statement(l));
-        required(l, try_parse_char_literal(l, '}'));
+        required(l, try_parse_char_literal(l, '}'), "}");
         return true;
     }
     return false;
@@ -338,15 +344,15 @@ void parse_attr(Lexer *l) {
     debugf(VERBOSITY_NORMAL, "parse_attr \n");
     if (try_parse_char_literal(l, '[')) {
         while (parse_ident(l));
-        required(l, try_parse_char_literal(l, ']'));
+        required(l, try_parse_char_literal(l, ']'), "] or ident");
     }
 }
 
 bool parse_return(Lexer *l) {
     debugf(VERBOSITY_NORMAL, "parse_return \n");
     if (try_parse_reserved_word(l, TOK_RETURN, "return")) {
-        required(l, parse_expression(l));
-        required(l, try_parse_char_literal(l, ';'));
+        required(l, parse_expression(l), "expression");
+        required(l, try_parse_char_literal(l, ';'), ";");
         return true;
     }
     return false;
@@ -357,20 +363,16 @@ bool parse_expression(Lexer *l) {
 
     if (try_parse_char_literal(l, '(')) {
         parse_expression(l);
-        required(l, try_parse_char_literal(l, ')'));
+        required(l, try_parse_char_literal(l, ')'), ")");
         return true;
     }
 
-    debugf(VERBOSITY_NORMAL, "parse_expression - left unary\n");
     while (parse_left_unary_operation(l));
 
-    debugf(VERBOSITY_NORMAL, "parse_expression - exp_left\n");
     if (parse_numeric_literal(l) || 
         parse_ident(l)) {
-        debugf(VERBOSITY_NORMAL, "parse_expression - right unary\n");
         while (parse_right_unary_operation(l));
 
-        debugf(VERBOSITY_NORMAL, "parse_expression - bin op \n");
         if (parse_binary_operation(l)) {
             parse_expression(l);
         }
@@ -389,9 +391,9 @@ bool parse_left_unary_operation(Lexer *l) {
 bool parse_right_unary_operation(Lexer *l) {
     if (try_parse_char_literal(l, '(')) {
         if (parse_expression(l)) {
-            while (try_parse_char_literal(l, ',') && required(l, parse_expression(l)));
+            while (try_parse_char_literal(l, ',') && required(l, parse_expression(l), "expression"));
         }
-        required(l, try_parse_char_literal(l, ')'));
+        required(l, try_parse_char_literal(l, ')'), ")");
         return true;
     }
     return
@@ -431,14 +433,14 @@ bool parse_ident_leading_statement(Lexer *l) {
         }
         else if(try_parse_char_literal(l, '(')) {
             if (parse_expression(l)) {
-                while (try_parse_char_literal(l, ',') && required(l, parse_expression(l)));
+                while (try_parse_char_literal(l, ',') && required(l, parse_expression(l), "expression"));
             }
-            required(l, try_parse_char_literal(l, ')'));
+            required(l, try_parse_char_literal(l, ')'), ")");
         }
         else {
-            error(l);
+            error(l, "Lone ident is not a valid statement");
         }
-        required(l, try_parse_char_literal(l, ';'));
+        required(l, try_parse_char_literal(l, ';'), ";");
         return true;
     }
     return false;
@@ -446,15 +448,15 @@ bool parse_ident_leading_statement(Lexer *l) {
 
 bool parse_if_statement(Lexer *l) {
     if (try_parse_reserved_word(l, TOK_IF, "if")) {
-        required(l, try_parse_char_literal(l, '('));
-        required(l, parse_expression(l));
-        required(l, try_parse_char_literal(l, ')'));
+        required(l, try_parse_char_literal(l, '('), "(");
+        required(l, parse_expression(l), "expression");
+        required(l, try_parse_char_literal(l, ')'), ")");
         if (try_parse_char_literal(l, '{')) {
             while (parse_statement(l));
-            required(l, try_parse_char_literal(l, '}'));
+            required(l, try_parse_char_literal(l, '}'), "}");
         }
         else {
-            required(l, parse_statement(l));
+            required(l, parse_statement(l), "statement");
         }
         return true;
     }
@@ -480,7 +482,7 @@ bool parse_numeric_literal(Lexer *l) {
         if (peek(l) == 'e') {
             read(l);
             if (peek(l) == '-') read(l);
-            if (!is_numeric(peek(l))) error(l);// must have int after exponant
+            if (!is_numeric(peek(l))) error(l, "Expected numeric value after exponant");
             while (is_numeric(peek(l))) read(l);
         }
         emit_token(l, TOK_NUMERIC_LITERAL);
