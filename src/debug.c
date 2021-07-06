@@ -4,7 +4,7 @@
 #include "stdio.h"
 
 #define DEBUG 1
-#define VERBOSITY VERBOSITY_NONE
+#define VERBOSITY VERBOSITY_NORMAL
 
 int debugf(debug_verbosity v, const char *fmt, ...) {
 #if DEBUG

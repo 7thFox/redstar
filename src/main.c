@@ -13,7 +13,7 @@ typedef struct {
     bool printlex;
 } program_args;
 
-int parseFile(const char *filePath);
+int parseFile(const char *filePath, AST_TREE *tree);
 int parseArgs(int argc, char ** argv);
 
 program_args args;
@@ -33,21 +33,24 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
+    AST_TREE tree = create_tree();
+
     char buff[512];
     struct dirent *de;
     while (de = readdir(dr)) {
         if (de->d_type == DT_REG) {
 
             sprintf(buff, "%s/%s", args.dir_path, de->d_name);
-            parseFile(buff);
+            parseFile(buff, &tree);
         }
         else if (de->d_type == DT_DIR) {
             // TODO: recursive
         }
     }
-    closedir(dr);
+    closedir(dr);// corrupted size vs. prev_size?
 
-    print_ast();
+    print_ast(&tree);
+    dealloc_ast(&tree);
 }
 
 int parseArgs(int argc, char ** argv){
@@ -73,7 +76,7 @@ int parseArgs(int argc, char ** argv){
     }
 }
 
-int parseFile(const char* filePath) {
+int parseFile(const char* filePath, AST_TREE *tree) {
     printf("parsing file '%s'...\n", filePath);
 
     FILE *f = fopen(filePath, "r");
@@ -98,7 +101,7 @@ int parseFile(const char* filePath) {
         printf("\n");
     }
 
-    int comp_unit_index = build_compliation_unit(&r, filePath);
+    int comp_unit_index = build_compliation_unit(tree, &r, filePath);
 
     free(r.tokens);
     free(r.text);

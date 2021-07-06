@@ -7,10 +7,12 @@
 #include "stdio.h"
 #include <stdlib.h>
 
+typedef uint32_t token_index;
+
 typedef struct {
     char *text;
     Token *tokens;
-    size_t n_tokens;
+    token_index n_tokens;
 } LexResult;
 
 LexResult lex_file(FILE *f);

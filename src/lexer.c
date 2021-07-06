@@ -6,8 +6,8 @@ typedef struct {
     size_t text_size;
     char *text;
 
-    size_t token_count;
-    size_t buffer_max;
+    token_index token_count;
+    token_index buffer_max;
     Token *token_buffer;
 
     Cursor current;
@@ -284,8 +284,6 @@ bool parse_attr_def(Lexer *l) {
     }
     return false;
 }
-
-int iconunt = 0;
 
 bool parse_ident(Lexer *l) {
     debugf(VERBOSITY_NORMAL, "parse_ident \n");
