@@ -25,6 +25,8 @@ ast_index build_find_use_statement(lex_cursor* lex);
 #define INDENT_CONST "                                            "
 void print_comp_unit(AST_TREE *tree, AST_COMPLIATION_UNIT *unit, int indentLevel);
 void print_use_statement(AST_USE_STATEMENT *use, int indentLevel);
+void print_statement(AST_COMPLIATION_UNIT *unit, AST_STATEMENT *statement, int indentLevel);
+void print_attr_declr(AST_COMPLIATION_UNIT *unit, AST_ATTR_DECLARATION *statement, int indentLevel);
 
 void dealloc_ast(AST_TREE *tree) {
     debugf(VERBOSITY_NORMAL, "dealloc_ast\n");
@@ -171,18 +173,15 @@ ast_index build_find_use_statement(lex_cursor* lex) {
             fprintf(stderr, "Reached max global use statements.\n");
             return -1;
         }
-        printf("realloc\n");
         lex->tree->use_statement_capacity *= 2;
         if (lex->tree->use_statement_capacity > AST_ARRAY_SIZE_MAX) lex->tree->use_statement_capacity = AST_ARRAY_SIZE_MAX;
 
         lex->tree->use_statements = realloc(lex->tree->use_statements, sizeof(AST_USE_STATEMENT) * lex->tree->use_statement_capacity);
     }
 
-    printf("path index: %i - %i\n", use_path->p0.ind, use_path->p1.ind);
     char hash = 0;
     for (int i = use_path->p0.ind; i < use_path->p1.ind; i++) {
         hash ^= lex->text[i + 1];
-        printf("%i: %c   hash: %x\n", i + 1, lex->text[i + 1], hash); // TODO
     }
 
     ast_hashtable_value *entry = lex->tree->use_statement_hash_table + hash;
@@ -226,12 +225,27 @@ void print_comp_unit(AST_TREE *tree, AST_COMPLIATION_UNIT *unit, int indentLevel
     for (int i = 0; i < unit->use_statement_size; i++) {
         print_use_statement(tree->use_statements + unit->use_statement_indexes[i], indentLevel + 1);
     }
+    // for (int i = 0; i < unit->statements_size; i++) {
+    //     print_statement(unit->statements + i, indentLevel + 1);
+    // }
 }
 
 void print_use_statement(AST_USE_STATEMENT *use, int indentLevel) {
     printf("%.*s", indentLevel * SPACE_PER_LEVEL, INDENT_CONST);
     printf("AST_USE_STATEMENT\n");
-
 }
 
 
+
+// void print_statement(AST_COMPLIATION_UNIT *unit, AST_STATEMENT *statement, int indentLevel) {
+//     switch (statement->type)
+//     {
+//         case AttrDeclr:
+//             print_attr_declr(unit, unit->attr + statement->index, indentLevel);
+//             break;
+//         }
+// }
+// void print_attr_declr(AST_COMPLIATION_UNIT *unit, AST_ATTR_DECLARATION *statement, int indentLevel) {
+//     printf("%.*s", indentLevel * SPACE_PER_LEVEL, INDENT_CONST);
+//     printf("AST_ATTR_DECLARATION\n");
+// }

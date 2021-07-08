@@ -16,23 +16,50 @@ typedef uint8_t compilation_unit_index;
 #define COMP_UNIT_SIZE_MAX 0xFF
 #define AST_HASH_TABLE_SIZE 0x100
 
+typedef enum {// as-needed (mostly for statements)
+    AttrDeclr,
+} ASTNodeType;
+
 typedef struct {
     uint8_t     has_value;// memset to 0
     ast_index   index;
     void        *next_conflict; // ast_hashtable_value
 } ast_hashtable_value;
 
-typedef struct
-{
+typedef struct {
+
+} AST_IDENT;
+
+typedef struct {
+    ASTNodeType type;
+    ast_index index;
+} AST_STATEMENT;
+
+typedef struct {
+    token_index attr_keyword;
+    ast_index ident_index;
+    ast_index block_index_optional;
+} AST_ATTR_DECLARATION;
+
+typedef struct {
     token_index use_keyword;
     token_index use_path;
 } AST_USE_STATEMENT;
 
 typedef struct {
     char *filename;
+
     ast_index *use_statement_indexes;
     ast_index use_statement_size;
     ast_index use_statement_capacity;
+
+    AST_STATEMENT   *statements;
+    ast_index       statements_size;
+    ast_index       statements_capacity;
+
+    AST_ATTR_DECLARATION    *attr;
+    ast_index               attr_size;
+    ast_index               attr_capacity;
 } AST_COMPLIATION_UNIT;
 
 typedef struct {
@@ -44,6 +71,7 @@ typedef struct {
     ast_index           use_statement_size;
     ast_index           use_statement_capacity;
     ast_hashtable_value use_statement_hash_table[AST_HASH_TABLE_SIZE];
+
 } AST_TREE;
 
 AST_TREE create_tree();
