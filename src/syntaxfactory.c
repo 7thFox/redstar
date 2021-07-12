@@ -259,13 +259,13 @@ SyntaxIndex make_func_decl(SyntaxFactory *f,
 
 SyntaxIndex begin_param_list(SyntaxFactory *f) {
     f->current_param_list = next_array_elem(&f->param_list_decls);
-    f->current_param_list->param_start = f->param_decls.size;
+    f->current_param_list->param_start = f->param_decls.size + 1;
 
     return f->param_list_decls.size;
 }
 
 void end_param_list(SyntaxFactory *f) {
-    f->current_param_list->param_end_noninclusive = f->param_decls.size;
+    f->current_param_list->param_end_noninclusive = f->param_decls.size + 1;
     f->current_param_list = 0;
 }
 

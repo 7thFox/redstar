@@ -10,6 +10,10 @@ void print_ident(SyntaxFactory *f, SyntaxIndex i);
 void print_statement(SyntaxFactory *f, StatementIndex i, int indent);
 void print_attr_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_func_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_param_list_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_param_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_type(SyntaxFactory *f, SyntaxIndex i);
+void print_attr_list(SyntaxFactory *f, SyntaxIndex i);
 
 void print_ast(Parser *p) {
     for (int i = 0; i < p->factory->compilation_units.size; i++) {
@@ -76,7 +80,50 @@ void print_func_decl(SyntaxFactory *f, SyntaxIndex i, int indent) {
     AstFuncDecl *func = ((AstFuncDecl *)f->func_declarations.array) + i - 1;
     printf("FUNC %i: ", i);
     print_ident(f, func->ident);
-    // ...
     printf("\n");
+    if (func->param_list_opt) print_param_list_decl(f, func->param_list_opt, indent + 1);
+    if (func->return_type_opt) {
+        printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
+        printf("RETURN TYPE: ");
+        print_type(f, func->return_type_opt);
+        printf("\n");
+    }
     print_block(f, func->block, indent + 1);
+}
+
+void print_param_list_decl(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    AstParameterListDecl *list = ((AstParameterListDecl *)f->param_list_decls.array) + i - 1;
+    printf("PARAMS %i:\n", i);
+    for (SyntaxIndex pi = list->param_start; pi < list->param_end_noninclusive; pi++){
+        print_param_decl(f, pi, indent + 1);
+    }
+}
+
+void print_param_decl(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    AstParameterDecl *param = ((AstParameterDecl *)f->param_decls.array) + i - 1;
+    printf("PARAM %i: ", i);
+    print_ident(f, param->ident);
+    printf(" of ");
+    print_type(f, param->type);
+    printf("\n");
+}
+
+void print_type(SyntaxFactory *f, SyntaxIndex i) {
+    AstType *type = ((AstType *)f->types.array) + i - 1;
+    printf("TYPE (%i) ", i);
+    if (type->attr_list_opt) print_attr_list(f, type->attr_list_opt);
+    print_ident(f, type->ident);
+}
+
+void print_attr_list(SyntaxFactory *f, SyntaxIndex i) {
+    AstAttrList *list = ((AstAttrList *)f->attr_lists.array) + i - 1;
+    printf("ATTRLIST (%i) ", i);
+    SyntaxIndex *attrs = (SyntaxIndex *)list->attributes.array;
+    for (int i = 0; i < list->attributes.size; i++)
+    {
+        print_ident(f, attrs[i]);
+        printf(" ");
+    }
 }
