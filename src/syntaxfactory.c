@@ -349,3 +349,12 @@ SyntaxIndex make_binary_expression(SyntaxFactory *f, SyntaxIndex left, Token *op
 
     return make_expression_index(f, f->binary_expressions.size, AST_BINARY_EXPRESSION);
 }
+
+SyntaxIndex make_return_statement(SyntaxFactory *f, Token *return_token, SyntaxIndex expression) {
+    assert(f, return_token, "Return Keyword");
+    assert_node(f, expression, "Expression");
+
+    AstReturnStatement *smt = next_array_elem(&f->return_statements);
+    smt->expression = expression;
+    return add_statement_index(f, f->return_statements.size, AST_RETURN_STATEMENT);
+}

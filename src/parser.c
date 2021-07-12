@@ -65,7 +65,7 @@ void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
 // Helper Functions
 Token* accept_token(Parser *p, TokenType type) {
     token_index next = p->current + 1;
-    // debugf(VERBOSITY_NORMAL, "accept_token %i = %i (%c)?\n", (p->tokens[next].type), type, type);
+    debugf(VERBOSITY_NORMAL, "accept_token %i (%c) = %i (%c)?\n", (p->tokens[next].type), (p->tokens[next].type), type, type);
     Token *tok;
     if (next < p->n_tokens &&
         (tok = p->tokens + next)->type == type)
@@ -105,6 +105,7 @@ SyntaxIndex parse_statement(Parser *p) {
     debugf(VERBOSITY_NORMAL, "parse_statement\n");
     return parse_attr_statement(p) ||
         parse_func_decl(p) ||
+        parse_return_statement(p) ||
         parse_block(p)
         // ... || ...
         ;
@@ -190,32 +191,43 @@ SyntaxIndex parse_block(Parser *p) {
     if (accept_token(p, '{')) {
         SyntaxIndex block = begin_block(p->factory);
         // TODO:
-        accept_token(p, TOK_RETURN);
-        accept_token(p, TOK_IDENT);
-        accept_token(p, '/');
-        accept_token(p, TOK_IDENT);
-        accept_token(p, ';');
+        // accept_token(p, TOK_RETURN);
+        // accept_token(p, TOK_IDENT);
+        // accept_token(p, '/');
+        // accept_token(p, TOK_IDENT);
+        // accept_token(p, ';');
 
-        // while (!accept_token(p, '}')) {
-        //     parse_statement(p);
-        // }
+        while (parse_statement(p));
+
         end_block(p->factory);
-        accept_token(p, '}');
+
+        if (!accept_token(p, '}')) {
+            fprintf(stderr, "Expected }\n");
+        }
+
         return block;
     }
     return EMPTY_SYNTAX_INDEX;
 }
 
 SyntaxIndex parse_return_statement(Parser *p) {
+    debugf(VERBOSITY_NORMAL, "parse_return_statement\n");
     Token *tok_return;
     if ((tok_return = accept_token(p, TOK_RETURN))) {
+        SyntaxIndex exp = parse_expression(p, EXP_ANY);
+        SyntaxIndex smt = make_return_statement(p->factory, tok_return, exp);
 
+        if (!accept_token(p, '}')) {
+            fprintf(stderr, "Expected }\n");
+        }
 
+        return smt;
     }
     return EMPTY_SYNTAX_INDEX;
 }
 
 SyntaxIndex parse_expression(Parser *p, ExpressionPriority priority) {
+    debugf(VERBOSITY_NORMAL, "parse_expression\n");
     SyntaxIndex left = parse_unary_expression(p);
     SyntaxIndex bin;
 
@@ -228,6 +240,7 @@ SyntaxIndex parse_expression(Parser *p, ExpressionPriority priority) {
 }
 
 SyntaxIndex parse_binary_expression(Parser *p, SyntaxIndex left, ExpressionPriority priority) {
+    debugf(VERBOSITY_NORMAL, "parse_binary_expression\n");
     if (p->current + 1 >= p->n_tokens) {
         return EMPTY_SYNTAX_INDEX;
     }
@@ -265,6 +278,7 @@ SyntaxIndex parse_binary_expression(Parser *p, SyntaxIndex left, ExpressionPrior
 }
 
 SyntaxIndex parse_unary_expression(Parser *p) {
+    debugf(VERBOSITY_NORMAL, "parse_unary_expression\n");
     SyntaxIndex exp;
     if ((exp = parse_ident(p))) {
         return make_unary_expression(p->factory, exp, AST_IDENT);

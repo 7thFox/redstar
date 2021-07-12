@@ -7,13 +7,16 @@ void print_unit(SyntaxFactory *f, SyntaxIndex i);
 void print_block(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_use(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_ident(SyntaxFactory *f, SyntaxIndex i);
-void print_statement(SyntaxFactory *f, TypedIndex i, int indent);
+void print_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_attr_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_func_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_param_list_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_param_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_type(SyntaxFactory *f, SyntaxIndex i);
 void print_attr_list(SyntaxFactory *f, SyntaxIndex i);
+void print_return_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_binary_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
 
 void print_ast(Parser *p) {
     for (int i = 0; i < p->factory->compilation_units.size; i++) {
@@ -37,26 +40,30 @@ void print_block(SyntaxFactory *f, SyntaxIndex i, int indent) {
     printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
     printf("BLOCK %i:\n", i);
     for (int i = 0; i < block->statements.size; i++) {
-        print_statement(f, ((TypedIndex*)f->statements.array)[i], 1);
+        print_statement(f, i + 1, 1);
     }
 }
 
-void print_statement(SyntaxFactory *f, TypedIndex i, int indent) {
-    if (!i.index) return;
+void print_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    TypedIndex ind = ((TypedIndex*)f->statements.array)[i - 1];
+    if (!ind.index) return;
 
-    switch (i.kind) {
+    switch (ind.kind) {
     case AST_USE:       
-        print_use(f, i.index, indent);
+        print_use(f, ind.index, indent);
         break;
     case AST_ATTR_DECL:
-        print_attr_decl(f, i.index, indent);
+        print_attr_decl(f, ind.index, indent);
         break;
     case AST_FUNC_DECL:
-        print_func_decl(f, i.index, indent);
+        print_func_decl(f, ind.index, indent);
+        break;
+    case AST_RETURN_STATEMENT:
+        print_return_statement(f, ind.index, indent);
         break;
     default:
     case AST_COMPILATION_UNIT:
-        fprintf(stderr, "Unexpected statement ast type %i\n", i.kind);
+        fprintf(stderr, "Unexpected statement ast type %i\n", ind.kind);
         break;
     }
 }
@@ -126,4 +133,46 @@ void print_attr_list(SyntaxFactory *f, SyntaxIndex i) {
         print_ident(f, attrs[i]);
         printf(" ");
     }
+}
+
+void print_return_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    AstReturnStatement *smt = ((AstReturnStatement *)f->return_statements.array) + i - 1;
+    printf("RETURN STATEMENT (%i)\n", i);
+    print_expression(f, smt->expression, indent + 1);
+}
+
+void print_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    TypedIndex index = ((TypedIndex *)f->expressions.array)[i - 1];
+    switch (index.kind)
+    {
+    case AST_BINARY_EXPRESSION:
+        print_binary_expression(f, index.index, indent);
+        break;
+    case AST_IDENT:
+        printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+        print_ident(f, index.index);
+        printf("\n");
+        break;
+    default:
+        fprintf(stderr, "Unexpected expression type %i\n", index.kind);
+        break;
+    }
+    
+}
+
+void print_binary_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    AstBinaryOperationExpression *bin = ((AstBinaryOperationExpression *)f->binary_expressions.array) + i - 1;
+    const char *op = "ERR";
+
+    switch(bin->operation) {
+    case BIN_ADD:      op = "+"; break;
+    case BIN_MINUS:    op = "-"; break;
+    case BIN_MULTIPLY: op = "*"; break;
+    case BIN_DIVIDE:   op = "/"; break;
+    }
+
+    printf("BIN EXP (%i) '%s'\n", i, op);
+    print_expression(f, bin->expression_left, indent + 1);
+    print_expression(f, bin->expression_right, indent + 1);
 }

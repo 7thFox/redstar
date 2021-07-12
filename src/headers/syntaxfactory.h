@@ -71,5 +71,6 @@ SyntaxIndex make_unary_expression(SyntaxFactory *factory,
     SyntaxIndex value, SyntaxKind kind);
 SyntaxIndex make_binary_expression(SyntaxFactory *factory,
     SyntaxIndex left, Token *op, SyntaxIndex right);
+SyntaxIndex make_return_statement(SyntaxFactory *factory, Token *return_token, SyntaxIndex expression);
 
 #endif

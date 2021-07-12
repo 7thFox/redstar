@@ -7,6 +7,7 @@ typedef enum {
     AST_ATTR_DECL,
     AST_FUNC_DECL,
     AST_IDENT,
+    AST_RETURN_STATEMENT,
     AST_BINARY_EXPRESSION,
 } SyntaxKind;
 
