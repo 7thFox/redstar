@@ -6,6 +6,8 @@ typedef enum {
     AST_USE,
     AST_ATTR_DECL,
     AST_FUNC_DECL,
+    AST_IDENT,
+    AST_BINARY_EXPRESSION,
 } SyntaxKind;
 
 #endif

@@ -7,16 +7,29 @@
 #include "syntaxindex.h"
 #include "syntaxkind.h"
 
+typedef enum {
+    BIN_MULTIPLY,
+    BIN_DIVIDE,
+    BIN_ADD,
+    BIN_MINUS,
+} BinaryOperationKind;
+
 typedef struct {
     SyntaxIndex index;
     SyntaxKind  kind;
 
-} StatementIndex;
+} TypedIndex;
 
 typedef struct {
     StringIndex filepath;
     SyntaxIndex block;
 } AstCompilationUnit;
+
+typedef struct {
+    SyntaxIndex expression_left;
+    BinaryOperationKind operation;
+    SyntaxIndex expression_right;
+} AstBinaryOperationExpression;
 
 typedef struct {
     // uint16_t    file_index;
@@ -67,5 +80,9 @@ typedef struct {
 typedef struct {
     SyntaxIndex referenced_compilation_unit;
 } AstUseStatement;
+
+typedef struct {
+    SyntaxIndex expression;
+} AstReturnStatement;
 
 #endif

@@ -6,6 +6,7 @@ StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
 void set_last_location(SyntaxFactory *f, Token *x);
 SyntaxIndex add_statement_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k);
+SyntaxIndex make_expression_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k);
 
 #define assert(f, x, kind)                              \
     if (!x)                                             \
@@ -39,16 +40,20 @@ SyntaxFactory *make_astfactory() {
 
     f->compilation_units = init_array(sizeof(AstCompilationUnit), 8);
     f->identifiers = init_array(sizeof(AstIdent), 128);
-    f->blocks = init_array(sizeof(AstBlock), 8);
+    f->types = init_array(sizeof(AstType), 16);
+    f->param_list_decls = init_array(sizeof(AstParameterListDecl), 8);
+    f->param_decls = init_array(sizeof(AstParameterDecl), 16);
+    f->attr_lists = init_array(sizeof(AstAttrList), 4);
 
-    f->statements = init_array(sizeof(StatementIndex), 32);
+    f->statements = init_array(sizeof(TypedIndex), 32);
+    f->blocks = init_array(sizeof(AstBlock), 8);
     f->use_statements = init_array(sizeof(AstUseStatement), 8);
     f->attribute_declarations = init_array(sizeof(AstAttrDecl), 1);
     f->func_declarations = init_array(sizeof(AstFuncDecl), 8);
-    f->param_list_decls = init_array(sizeof(AstParameterListDecl), 8);
-    f->param_decls = init_array(sizeof(AstParameterDecl), 16);
-    f->types = init_array(sizeof(AstType), 16);
-    f->attr_lists = init_array(sizeof(AstAttrList), 4);
+    f->return_statements = init_array(sizeof(AstReturnStatement), 8);
+
+    f->expressions = init_array(sizeof(TypedIndex), 32);
+    f->binary_expressions = init_array(sizeof(AstBinaryOperationExpression), 8);
 
     f->strings_capacity = 2048;
     f->strings_size = 0;
@@ -152,17 +157,25 @@ StringIndex copy_token_string(SyntaxFactory *f, Token *tok) {
 
 SyntaxIndex add_statement_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k) {
     // debugf(VERBOSITY_HIGH, "add_statement_index %x + %i\n", f->statements.array, i);
-    StatementIndex *index = next_array_elem(&f->statements);
+    TypedIndex *index = next_array_elem(&f->statements);
     index->index = i;
     index->kind = k;
 
     if (f->current_block) {
         debugf(VERBOSITY_HIGH, "add_statement_index current_block %x\n", f->current_block, i);
-        StatementIndex *block_index = next_array_elem(& f->current_block->statements);
+        TypedIndex *block_index = next_array_elem(& f->current_block->statements);
         *block_index = *index;
     }
 
     return i;
+}
+
+SyntaxIndex make_expression_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k) {
+    TypedIndex *index = next_array_elem(&f->expressions);
+    index->index = i;
+    index->kind = k;
+
+    return f->expressions.size;
 }
 
 SyntaxIndex begin_compilation_unit(SyntaxFactory *f, LexResult *lex, const char *file_path) {
@@ -183,7 +196,7 @@ void end_compilation_unit(SyntaxFactory *f) {
 
 SyntaxIndex begin_block(SyntaxFactory *f) {
     AstBlock *block = next_array_elem(&f->blocks);
-    block->statements = init_array(sizeof(StatementIndex), 16);
+    block->statements = init_array(sizeof(TypedIndex), 16);
     block->parent_block = f->current_block_index;
     
     f->current_block = block;
@@ -300,4 +313,39 @@ SyntaxIndex begin_attr_list(SyntaxFactory *f, Token *left) {
 
 void end_attr_list(SyntaxFactory *f) {
     f->current_attr_list = 0;
+}
+
+SyntaxIndex make_unary_expression(SyntaxFactory *f, SyntaxIndex value, SyntaxKind kind) {
+    assert_node(f, value, "Unary Expression Value");
+    return make_expression_index(f, value, kind);
+}
+
+SyntaxIndex make_binary_expression(SyntaxFactory *f, SyntaxIndex left, Token *op, SyntaxIndex right) {
+    assert_node(f, left, "Left Binary Expression Value");
+    assert(f, op, "Binary Expression Operation");
+    assert_node(f, right, "Right Binary Expression Value");
+
+    AstBinaryOperationExpression *exp = next_array_elem(&f->binary_expressions);
+    exp->expression_left = left;
+    exp->expression_right = right;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch"
+    switch (op->type)
+    {
+    case '+': exp->operation = BIN_ADD; break;
+    case '-': exp->operation = BIN_MINUS; break;
+    case '*': exp->operation = BIN_MULTIPLY; break;
+    case '/': exp->operation = BIN_DIVIDE; break;
+    // case '%': new_priority = EXP_ADD; break;
+    // case TOK_OR: new_priority = EXP_ADD; break;
+    // case TOK_AND: new_priority = EXP_ADD; break;
+    // case '|': new_priority = EXP_ADD; break;
+    // case '&': new_priority = EXP_ADD; break;
+    default:
+        fprintf(stderr, "Unexpected binary operator '%c' (%i)\n", op->type, op->type);
+        return EMPTY_SYNTAX_INDEX;
+    }
+#pragma GCC diagnostic pop
+
+    return make_expression_index(f, f->binary_expressions.size, AST_BINARY_EXPRESSION);
 }

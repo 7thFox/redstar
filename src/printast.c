@@ -7,7 +7,7 @@ void print_unit(SyntaxFactory *f, SyntaxIndex i);
 void print_block(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_use(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_ident(SyntaxFactory *f, SyntaxIndex i);
-void print_statement(SyntaxFactory *f, StatementIndex i, int indent);
+void print_statement(SyntaxFactory *f, TypedIndex i, int indent);
 void print_attr_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_func_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_param_list_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
@@ -37,11 +37,11 @@ void print_block(SyntaxFactory *f, SyntaxIndex i, int indent) {
     printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
     printf("BLOCK %i:\n", i);
     for (int i = 0; i < block->statements.size; i++) {
-        print_statement(f, ((StatementIndex*)f->statements.array)[i], 1);
+        print_statement(f, ((TypedIndex*)f->statements.array)[i], 1);
     }
 }
 
-void print_statement(SyntaxFactory *f, StatementIndex i, int indent) {
+void print_statement(SyntaxFactory *f, TypedIndex i, int indent) {
     if (!i.index) return;
 
     switch (i.kind) {

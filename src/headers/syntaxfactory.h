@@ -20,16 +20,20 @@ typedef struct {
 
     SyntaxArray compilation_units;
     SyntaxArray identifiers;
-    SyntaxArray blocks;
+    SyntaxArray types;
+    SyntaxArray param_list_decls;
+    SyntaxArray param_decls;
+    SyntaxArray attr_lists;
 
     SyntaxArray statements;
+    SyntaxArray blocks;
     SyntaxArray use_statements;
     SyntaxArray attribute_declarations;
     SyntaxArray func_declarations;
-    SyntaxArray param_list_decls;
-    SyntaxArray param_decls;
-    SyntaxArray types;
-    SyntaxArray attr_lists;
+    SyntaxArray return_statements;
+
+    SyntaxArray expressions;
+    SyntaxArray binary_expressions;
 
     char        *strings;
     StringIndex strings_size;
@@ -63,5 +67,9 @@ SyntaxIndex make_param(SyntaxFactory *factory, SyntaxIndex ident, Token *colon, 
 SyntaxIndex make_type(SyntaxFactory *factory, SyntaxIndex attr_list_opt, SyntaxIndex ident);
 SyntaxIndex begin_attr_list(SyntaxFactory *factory, Token *left);
 void end_attr_list(SyntaxFactory *factory);
+SyntaxIndex make_unary_expression(SyntaxFactory *factory,
+    SyntaxIndex value, SyntaxKind kind);
+SyntaxIndex make_binary_expression(SyntaxFactory *factory,
+    SyntaxIndex left, Token *op, SyntaxIndex right);
 
 #endif
