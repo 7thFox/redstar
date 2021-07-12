@@ -7,24 +7,18 @@
 #include "lexer.h"
 #include "syntaxindex.h"
 
-typedef struct {
-    uint8_t     *array;
-    size_t      elem_size;
-    uint16_t    size;
-    uint16_t    capacity;
-#define SYNTAX_ARRAY_MAX_CAPACITY 0xFFFF
-#define SYNTAX_ARRAY_MAX_GROW 64
-} SyntaxArray;
 
-typedef struct
-{
-    AstCompilationUnit *current_unit;
-    const char *current_text;
+typedef struct {
+    AstCompilationUnit  *current_unit;
+    AstBlock            *current_block;
+    SyntaxIndex         current_block_index;
+    const char          *current_text;
 
     Location last_location;
 
     SyntaxArray compilation_units;
     SyntaxArray identifiers;
+    SyntaxArray blocks;
 
     SyntaxArray statements;
     SyntaxArray use_statements;
@@ -41,6 +35,9 @@ void destroy_astfactory(SyntaxFactory *factory);
 
 SyntaxIndex begin_compilation_unit(SyntaxFactory *factory, LexResult *lex, const char *file_path);
 void end_compilation_unit(SyntaxFactory *factory);
+
+SyntaxIndex begin_block(SyntaxFactory *factory);
+void end_block(SyntaxFactory *factory);
 
 SyntaxIndex make_use_statement(SyntaxFactory *factory, Token *use, Token *name);
 SyntaxIndex make_ident(SyntaxFactory *factory, Token *name);

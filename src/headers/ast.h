@@ -15,8 +15,7 @@ typedef struct {
 
 typedef struct {
     StringIndex filepath;
-    SyntaxIndex statement_start;
-    SyntaxIndex statement_end_noninclusive;
+    SyntaxIndex block;
 } AstCompilationUnit;
 
 typedef struct {
@@ -28,6 +27,11 @@ typedef struct {
 typedef struct {
     StringIndex name;
 } AstIdent;
+
+typedef struct {
+    SyntaxIndex parent_block;
+    SyntaxArray statements;
+} AstBlock;
 
 typedef struct {
     SyntaxIndex ident;

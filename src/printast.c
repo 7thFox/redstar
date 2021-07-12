@@ -4,7 +4,8 @@
 #define INDENT_CONST "                                            "
 
 void print_unit(SyntaxFactory *f, AstCompilationUnit *n);
-void print_use(SyntaxFactory *f,AstUseStatement *n, int indent);
+void print_block(SyntaxFactory *f, AstBlock *n, int indent);
+void print_use(SyntaxFactory *f, AstUseStatement *n, int indent);
 void print_statement(SyntaxFactory *f, StatementIndex i, int indent);
 void print_attr_decl(SyntaxFactory *f, AstAttrDecl *n, int indent);
 
@@ -16,10 +17,17 @@ void print_ast(Parser *p) {
 
 void print_unit(SyntaxFactory *f, AstCompilationUnit *n) {
     printf("COMPILATION UNIT: '%s'\n", f->strings + n->filepath);
-    for (int i = n->statement_start; i < n->statement_end_noninclusive; i++) {
+    print_block(f, ((AstBlock *)f->blocks.array) + n->block, 0);
+}
+
+void print_block(SyntaxFactory *f, AstBlock *n, int indent) {
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("BLOCK:\n");
+    for (int i = 0; i < n->statements.size; i++) {
         print_statement(f, ((StatementIndex*)f->statements.array)[i], 1);
     }
 }
+
 void print_statement(SyntaxFactory *f, StatementIndex i, int indent) {
     if (!i.index) return;
 

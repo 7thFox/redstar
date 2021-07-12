@@ -35,8 +35,10 @@ SyntaxFactory *make_astfactory() {
     SyntaxFactory *f = malloc(sizeof(SyntaxFactory));
     f->current_text = 0;
     f->current_unit = 0;
+    f->current_block = 0;
     f->compilation_units = init_array(sizeof(AstCompilationUnit), 8);
     f->identifiers = init_array(sizeof(AstIdent), 128);
+    f->blocks = init_array(sizeof(AstBlock), 8);
 
     f->statements = init_array(sizeof(StatementIndex), 32);
     f->use_statements = init_array(sizeof(AstUseStatement), 8);
@@ -53,6 +55,11 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->strings);
     free(f->compilation_units.array);
     free(f->identifiers.array);
+
+    for (int i = 0; i < f->blocks.size; i++) {
+        free(((AstBlock *)f->blocks.array)[i].statements.array);
+    }
+    free(f->blocks.array);
 
     free(f->statements.array);
     free(f->attribute_declarations.array);
@@ -130,9 +137,16 @@ StringIndex copy_token_string(SyntaxFactory *f, Token *tok) {
 }
 
 SyntaxIndex add_statement_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k) {
+    debugf(VERBOSITY_HIGH, "add_statement_index\n");
     StatementIndex *index = next_array_elem(&f->statements);
     index->index = i;
     index->kind = k;
+
+    if (f->current_block) {
+        StatementIndex *block_index = next_array_elem(&f->current_block->statements);
+        *block_index = *index;
+    }
+
     return i;
 }
 
@@ -142,15 +156,33 @@ SyntaxIndex begin_compilation_unit(SyntaxFactory *f, LexResult *lex, const char 
     f->current_text = lex->text;
     f->current_unit = next_array_elem(&(f->compilation_units));
     f->current_unit->filepath = copy_string(f, file_path);
-    f->current_unit->statement_start = f->statements.size;
+    begin_block(f);
     return f->compilation_units.size;
 }
 
 void end_compilation_unit(SyntaxFactory *f) {
     debugf(VERBOSITY_NORMAL, "end_compilation_unit\n");
-    f->current_unit->statement_end_noninclusive = f->statements.size;
-
+    end_block(f);
     f->current_unit = 0;
+}
+
+SyntaxIndex begin_block(SyntaxFactory *f) {
+    debugf(VERBOSITY_NORMAL, "begin_block\n");
+    AstBlock *block = next_array_elem(&f->blocks);
+    block->statements = init_array(sizeof(StatementIndex), 16);
+    block->parent_block = f->blocks.size;
+    f->current_block = block;
+    return f->blocks.size;
+}
+
+void end_block(SyntaxFactory *f) {
+    debugf(VERBOSITY_NORMAL, "end_block\n");
+    if (f->current_block) {
+        if (f->current_block->parent_block)
+            f->current_block = ((AstBlock*)f->blocks.array) + f->current_block->parent_block;
+        else
+            f->current_block = 0;
+    }
 }
 
 SyntaxIndex make_use_statement(SyntaxFactory *f, Token *use_tok, Token *name) {
@@ -169,6 +201,7 @@ SyntaxIndex make_ident(SyntaxFactory *f, Token *name) {
     ident->name = copy_token_string(f, name);
     return f->identifiers.size;
 }
+
 SyntaxIndex make_attr_decl(SyntaxFactory *f, Token *attr, SyntaxIndex ident, SyntaxIndex block) {
     debugf(VERBOSITY_NORMAL, "make_attr_decl\n");
     assert(f, attr, "Attr Keyword");
@@ -178,3 +211,4 @@ SyntaxIndex make_attr_decl(SyntaxFactory *f, Token *attr, SyntaxIndex ident, Syn
     decl->block_opt = block;
     return add_statement_index(f, f->attribute_declarations.size, AST_ATTR_DECL);
 }
+
