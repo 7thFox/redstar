@@ -19,12 +19,16 @@ typedef struct {
 typedef struct
 {
     AstCompilationUnit *current_unit;
-    
+    const char *current_text;
+
     Location last_location;
 
     SyntaxArray compilation_units;
-    SyntaxArray use_statements;
     SyntaxArray identifiers;
+
+    SyntaxArray statements;
+    SyntaxArray use_statements;
+    SyntaxArray attribute_declarations;
 
     char        *strings;
     StringIndex strings_size;
@@ -40,5 +44,6 @@ void end_compilation_unit(SyntaxFactory *factory);
 
 SyntaxIndex make_use_statement(SyntaxFactory *factory, Token *use, Token *name);
 SyntaxIndex make_ident(SyntaxFactory *factory, Token *name);
+SyntaxIndex make_attr_decl(SyntaxFactory *factory, Token *attr, SyntaxIndex ident, SyntaxIndex block);
 
 #endif

@@ -29,8 +29,8 @@ void start_token(Lexer *l);
 void emit_token(Lexer *l, TokenType t);
 
 // state helpers
-bool try_parse_reserved_word(Lexer *l, TokenType type, const char* lit);
-bool try_parse_char_literal(Lexer *l, char lit);
+bool try_lex_reserved_word(Lexer *l, TokenType type, const char* lit);
+bool try_lex_char_literal(Lexer *l, char lit);
 bool eat_inline_whitespace(Lexer *l);
 bool eat_whitespace(Lexer *l);
 bool try_eat_comment(Lexer *l);
@@ -38,22 +38,22 @@ void error(Lexer *l, const char * msg);
 static inline bool required(Lexer *l, bool ret_val, const char * desc);
 
 // states
-bool parse_use(Lexer *l);
-bool parse_statement(Lexer *l);
-bool parse_ident(Lexer *l);
-bool parse_attr_def(Lexer *l);
-bool parse_func_def(Lexer *l);
-bool parse_param_def(Lexer *l);
-void parse_type_name(Lexer *l);
-void parse_attr(Lexer *l);
-bool parse_return(Lexer *l);
-bool parse_expression(Lexer *l);
-bool parse_left_unary_operation(Lexer *l);
-bool parse_right_unary_operation(Lexer *l);
-bool parse_binary_operation(Lexer *l);
-bool parse_ident_leading_statement(Lexer *l);
-bool parse_if_statement(Lexer *l);
-bool parse_numeric_literal(Lexer *l);
+bool lex_use(Lexer *l);
+bool lex_statement(Lexer *l);
+bool lex_ident(Lexer *l);
+bool lex_attr_def(Lexer *l);
+bool lex_func_def(Lexer *l);
+bool lex_param_def(Lexer *l);
+void lex_type_name(Lexer *l);
+void lex_attr(Lexer *l);
+bool lex_return(Lexer *l);
+bool lex_expression(Lexer *l);
+bool lex_left_unary_operation(Lexer *l);
+bool lex_right_unary_operation(Lexer *l);
+bool lex_binary_operation(Lexer *l);
+bool lex_ident_leading_statement(Lexer *l);
+bool lex_if_statement(Lexer *l);
+bool lex_numeric_literal(Lexer *l);
 
 LexResult lex_file(FILE *f) {
     Lexer l;
@@ -75,9 +75,9 @@ LexResult lex_file(FILE *f) {
     fread(l.text, sizeof(char), l.text_size, f);
 
     eat_whitespace(&l);
-    while (parse_use(&l));// move to statemetn?
+    while (lex_use(&l));// move to statemetn?
     while (l.current.ind < l.text_size - 1) {// TODO: might be off by 1 or 2?
-        if (!parse_statement(&l)) {
+        if (!lex_statement(&l)) {
             error(&l, "Unexpected EOF");
             break;
         }
@@ -129,12 +129,16 @@ static inline char peek(Lexer *l) {
 
 void start_token(Lexer *l) {
     // TODO: check buffer size and resize if needed
-    l->token_buffer[l->token_count].p0 = l->current;
+    l->token_buffer[l->token_count].p0.line = l->current.line;
+    l->token_buffer[l->token_count].p0.col = l->current.col + 1;
+    l->token_buffer[l->token_count].p0.ind = l->current.ind + 1;
 }
 
 void emit_token(Lexer *l, TokenType type) {
     l->token_buffer[l->token_count].type = type;
-    l->token_buffer[l->token_count].p1 = l->current;
+    l->token_buffer[l->token_count].p1.line = l->current.line;
+    l->token_buffer[l->token_count].p1.col = l->current.col + 1;
+    l->token_buffer[l->token_count].p1.ind = l->current.ind + 1;
 
     // TODO?
     // switch (type)
@@ -196,8 +200,8 @@ bool try_eat_comment(Lexer *l) {
     return false;
 }
 
-bool try_parse_reserved_word(Lexer *l, TokenType type, const char* lit) {
-    debugf(VERBOSITY_NORMAL, "try_parse_reserved_word '%s'\n", lit);
+bool try_lex_reserved_word(Lexer *l, TokenType type, const char* lit) {
+    debugf(VERBOSITY_NORMAL, "try_lex_reserved_word '%s'\n", lit);
     int i = 0;
     for (; lit[i] != '\0'; i++)
     {
@@ -221,8 +225,8 @@ bool try_parse_reserved_word(Lexer *l, TokenType type, const char* lit) {
     return false;
 }
 
-bool try_parse_char_literal(Lexer *l, char lit) {
-    debugf(VERBOSITY_NORMAL, "try_parse_char_literal '%c'\n", lit);
+bool try_lex_char_literal(Lexer *l, char lit) {
+    debugf(VERBOSITY_NORMAL, "try_lex_char_literal '%c'\n", lit);
     if (peek(l) == lit) {
         start_token(l);
         read(l);
@@ -251,9 +255,9 @@ static inline bool required(Lexer *l, bool ret_val, const char * desc) {
 //            STATES            //
 //////////////////////////////////
 
-bool parse_use(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_use \n");
-    if (try_parse_reserved_word(l, TOK_USE, "use"))
+bool lex_use(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_use \n");
+    if (try_lex_reserved_word(l, TOK_USE, "use"))
     {
         start_token(l);
         while (is_valid_use_path_char(peek(l))) read(l);
@@ -265,31 +269,31 @@ bool parse_use(Lexer *l) {
     return false;
 }
 
-bool parse_statement(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_statement \n");
+bool lex_statement(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_statement \n");
 
     return 
-        parse_attr_def(l) ||
-        parse_func_def(l) ||
-        parse_return(l) ||
-        parse_if_statement(l) ||
-        parse_ident_leading_statement(l);
+        lex_attr_def(l) ||
+        lex_func_def(l) ||
+        lex_return(l) ||
+        lex_if_statement(l) ||
+        lex_ident_leading_statement(l);
 }
 
-bool parse_attr_def(Lexer *l) {
-    if (try_parse_reserved_word(l, TOK_ATTR, "attr")) {
-        parse_ident(l);
-        if (try_parse_char_literal(l, '{')) {
+bool lex_attr_def(Lexer *l) {
+    if (try_lex_reserved_word(l, TOK_ATTR, "attr")) {
+        lex_ident(l);
+        if (try_lex_char_literal(l, '{')) {
             // TODO
-            required(l, try_parse_char_literal(l, '}'), "}");
+            required(l, try_lex_char_literal(l, '}'), "}");
         }
         return true;
     }
     return false;
 }
 
-bool parse_ident(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_ident \n");
+bool lex_ident(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_ident \n");
     if (is_ident_start_char(peek(l))) {
         start_token(l);
         read(l);
@@ -302,78 +306,78 @@ bool parse_ident(Lexer *l) {
     return false;
 }
 
-bool parse_func_def(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_func_def \n");
-    if (try_parse_reserved_word(l, TOK_FUNC, "func"))
+bool lex_func_def(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_func_def \n");
+    if (try_lex_reserved_word(l, TOK_FUNC, "func"))
     {
-        parse_ident(l);
-        required(l, try_parse_char_literal(l, '('), "(");
-        if (parse_param_def(l)){
-            while (try_parse_char_literal(l, ',') && required(l, parse_param_def(l), "parameter definition"));
+        lex_ident(l);
+        required(l, try_lex_char_literal(l, '('), "(");
+        if (lex_param_def(l)){
+            while (try_lex_char_literal(l, ',') && required(l, lex_param_def(l), "parameter definition"));
         }
-        required(l, try_parse_char_literal(l, ')'), ")");
-        parse_type_name(l);// return type
-        required(l, try_parse_char_literal(l, '{'), "{");
-        while (parse_statement(l));
-        required(l, try_parse_char_literal(l, '}'), "}");
+        required(l, try_lex_char_literal(l, ')'), ")");
+        lex_type_name(l);// return type
+        required(l, try_lex_char_literal(l, '{'), "{");
+        while (lex_statement(l));
+        required(l, try_lex_char_literal(l, '}'), "}");
         return true;
     }
     return false;
 }
 
-bool parse_param_def(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_param_def \n");
-    if (parse_ident(l)) {
-        try_parse_char_literal(l, ':');
-        parse_type_name(l);
+bool lex_param_def(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_param_def \n");
+    if (lex_ident(l)) {
+        try_lex_char_literal(l, ':');
+        lex_type_name(l);
         return true;
     }
     return false;
 }
 
-void parse_type_name(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_type_name \n");
-    parse_attr(l);
-    parse_ident(l);
+void lex_type_name(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_type_name \n");
+    lex_attr(l);
+    lex_ident(l);
     // TODO: pointers?
     // TODO: arrays?
 }
 
-void parse_attr(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_attr \n");
-    if (try_parse_char_literal(l, '[')) {
-        while (parse_ident(l));
-        required(l, try_parse_char_literal(l, ']'), "] or ident");
+void lex_attr(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_attr \n");
+    if (try_lex_char_literal(l, '[')) {
+        while (lex_ident(l));
+        required(l, try_lex_char_literal(l, ']'), "] or ident");
     }
 }
 
-bool parse_return(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_return \n");
-    if (try_parse_reserved_word(l, TOK_RETURN, "return")) {
-        required(l, parse_expression(l), "expression");
-        required(l, try_parse_char_literal(l, ';'), ";");
+bool lex_return(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_return \n");
+    if (try_lex_reserved_word(l, TOK_RETURN, "return")) {
+        required(l, lex_expression(l), "expression");
+        required(l, try_lex_char_literal(l, ';'), ";");
         return true;
     }
     return false;
 }
 
-bool parse_expression(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "parse_expression \n");
+bool lex_expression(Lexer *l) {
+    debugf(VERBOSITY_NORMAL, "lex_expression \n");
 
-    if (try_parse_char_literal(l, '(')) {
-        parse_expression(l);
-        required(l, try_parse_char_literal(l, ')'), ")");
+    if (try_lex_char_literal(l, '(')) {
+        lex_expression(l);
+        required(l, try_lex_char_literal(l, ')'), ")");
         return true;
     }
 
-    while (parse_left_unary_operation(l));
+    while (lex_left_unary_operation(l));
 
-    if (parse_numeric_literal(l) || 
-        parse_ident(l)) {
-        while (parse_right_unary_operation(l));
+    if (lex_numeric_literal(l) || 
+        lex_ident(l)) {
+        while (lex_right_unary_operation(l));
 
-        if (parse_binary_operation(l)) {
-            parse_expression(l);
+        if (lex_binary_operation(l)) {
+            lex_expression(l);
         }
         return true;
     }
@@ -381,88 +385,88 @@ bool parse_expression(Lexer *l) {
     return false;
 }
 
-bool parse_left_unary_operation(Lexer *l) {
+bool lex_left_unary_operation(Lexer *l) {
     return
-        try_parse_reserved_word(l, TOK_INC, "++") ||
-        try_parse_reserved_word(l, TOK_DEC, "--");
+        try_lex_reserved_word(l, TOK_INC, "++") ||
+        try_lex_reserved_word(l, TOK_DEC, "--");
 }
 
-bool parse_right_unary_operation(Lexer *l) {
-    if (try_parse_char_literal(l, '(')) {
-        if (parse_expression(l)) {
-            while (try_parse_char_literal(l, ',') && required(l, parse_expression(l), "expression"));
+bool lex_right_unary_operation(Lexer *l) {
+    if (try_lex_char_literal(l, '(')) {
+        if (lex_expression(l)) {
+            while (try_lex_char_literal(l, ',') && required(l, lex_expression(l), "expression"));
         }
-        required(l, try_parse_char_literal(l, ')'), ")");
+        required(l, try_lex_char_literal(l, ')'), ")");
         return true;
     }
     return
-        try_parse_reserved_word(l, TOK_INC, "++") ||
-        try_parse_reserved_word(l, TOK_DEC, "--");
+        try_lex_reserved_word(l, TOK_INC, "++") ||
+        try_lex_reserved_word(l, TOK_DEC, "--");
 }
 
-bool parse_binary_operation(Lexer *l) {
-    if (try_parse_char_literal(l, '+') ||
-        try_parse_char_literal(l, '-') ||
-        try_parse_char_literal(l, '*') ||
-        try_parse_char_literal(l, '/') ||
-        try_parse_char_literal(l, '%') ||
-        try_parse_reserved_word(l, TOK_AND, "&&") ||
-        try_parse_reserved_word(l, TOK_OR, "||") ||
-        try_parse_char_literal(l, '&') ||
-        try_parse_char_literal(l, '|') ||
-        try_parse_reserved_word(l, TOK_EQUALITY, "==") ||
-        try_parse_reserved_word(l, TOK_LESS_EQUALS, "<=") ||
-        try_parse_reserved_word(l, TOK_GREATER_EQUALS, ">=") ||
-        try_parse_reserved_word(l, TOK_NOT_EQUALS, "!=") ||
-        try_parse_char_literal(l, '<') ||
-        try_parse_char_literal(l, '>')) 
+bool lex_binary_operation(Lexer *l) {
+    if (try_lex_char_literal(l, '+') ||
+        try_lex_char_literal(l, '-') ||
+        try_lex_char_literal(l, '*') ||
+        try_lex_char_literal(l, '/') ||
+        try_lex_char_literal(l, '%') ||
+        try_lex_reserved_word(l, TOK_AND, "&&") ||
+        try_lex_reserved_word(l, TOK_OR, "||") ||
+        try_lex_char_literal(l, '&') ||
+        try_lex_char_literal(l, '|') ||
+        try_lex_reserved_word(l, TOK_EQUALITY, "==") ||
+        try_lex_reserved_word(l, TOK_LESS_EQUALS, "<=") ||
+        try_lex_reserved_word(l, TOK_GREATER_EQUALS, ">=") ||
+        try_lex_reserved_word(l, TOK_NOT_EQUALS, "!=") ||
+        try_lex_char_literal(l, '<') ||
+        try_lex_char_literal(l, '>')) 
     {
         return true;
     }
     return false;
 }
 
-bool parse_ident_leading_statement(Lexer *l) {
-    if (parse_ident(l)) {
-        if (try_parse_char_literal(l, ':')) {
-            parse_type_name(l);
-            if (try_parse_char_literal(l, '=')) {
-                parse_expression(l);
+bool lex_ident_leading_statement(Lexer *l) {
+    if (lex_ident(l)) {
+        if (try_lex_char_literal(l, ':')) {
+            lex_type_name(l);
+            if (try_lex_char_literal(l, '=')) {
+                lex_expression(l);
             }
         }
-        else if(try_parse_char_literal(l, '(')) {
-            if (parse_expression(l)) {
-                while (try_parse_char_literal(l, ',') && required(l, parse_expression(l), "expression"));
+        else if(try_lex_char_literal(l, '(')) {
+            if (lex_expression(l)) {
+                while (try_lex_char_literal(l, ',') && required(l, lex_expression(l), "expression"));
             }
-            required(l, try_parse_char_literal(l, ')'), ")");
+            required(l, try_lex_char_literal(l, ')'), ")");
         }
         else {
             error(l, "Lone ident is not a valid statement");
         }
-        required(l, try_parse_char_literal(l, ';'), ";");
+        required(l, try_lex_char_literal(l, ';'), ";");
         return true;
     }
     return false;
 }
 
-bool parse_if_statement(Lexer *l) {
-    if (try_parse_reserved_word(l, TOK_IF, "if")) {
-        required(l, try_parse_char_literal(l, '('), "(");
-        required(l, parse_expression(l), "expression");
-        required(l, try_parse_char_literal(l, ')'), ")");
-        if (try_parse_char_literal(l, '{')) {
-            while (parse_statement(l));
-            required(l, try_parse_char_literal(l, '}'), "}");
+bool lex_if_statement(Lexer *l) {
+    if (try_lex_reserved_word(l, TOK_IF, "if")) {
+        required(l, try_lex_char_literal(l, '('), "(");
+        required(l, lex_expression(l), "expression");
+        required(l, try_lex_char_literal(l, ')'), ")");
+        if (try_lex_char_literal(l, '{')) {
+            while (lex_statement(l));
+            required(l, try_lex_char_literal(l, '}'), "}");
         }
         else {
-            required(l, parse_statement(l), "statement");
+            required(l, lex_statement(l), "statement");
         }
         return true;
     }
     return false;
 }
 
-bool parse_numeric_literal(Lexer *l) {
+bool lex_numeric_literal(Lexer *l) {
     bool negative = false;
     char p = peek(l);
     if (p == '-' && (uint16_t)(l->current.ind + 2) < l->text_size) {

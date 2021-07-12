@@ -5,11 +5,18 @@
 #include "common.h"
 #include "token.h"
 #include "syntaxindex.h"
+#include "syntaxkind.h"
+
+typedef struct {
+    SyntaxIndex index;
+    SyntaxKind  kind;
+
+} StatementIndex;
 
 typedef struct {
     StringIndex filepath;
-    SyntaxIndex use_start;
-    SyntaxIndex use_end_noninclusive;
+    SyntaxIndex statement_start;
+    SyntaxIndex statement_end_noninclusive;
 } AstCompilationUnit;
 
 typedef struct {

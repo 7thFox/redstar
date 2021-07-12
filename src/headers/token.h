@@ -30,9 +30,6 @@ typedef struct {
     TokenType type;
     Cursor p0;
     Cursor p1;
-    union {
-        char *literal_text;
-    };
 } Token;
 
 #endif
