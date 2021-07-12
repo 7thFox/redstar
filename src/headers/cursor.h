@@ -4,9 +4,9 @@
 #include "common.h"
 
 typedef struct {
-    int line;
-    int col;
-    int ind;
-} Cursor; // 12
+    uint8_t line;
+    uint8_t col;
+    uint16_t ind;
+} Cursor;
 
 #endif

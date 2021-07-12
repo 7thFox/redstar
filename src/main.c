@@ -1,6 +1,7 @@
 #include "headers/common.h"
 #include "headers/lexer.h"
-#include "headers/ast.h"
+#include "headers/parser.h"
+#include "headers/printast.h"
 
 #include "dirent.h"
 #include "stdio.h"
@@ -13,7 +14,7 @@ typedef struct {
     bool printlex;
 } program_args;
 
-int parseFile(const char *filePath, AST_TREE *tree);
+int parse_file(const char *filePath, Parser *parser);
 int parseArgs(int argc, char ** argv);
 
 program_args args;
@@ -33,24 +34,25 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
-    AST_TREE tree = create_tree();
+    Parser *parser = make_parser();
 
     char buff[512];
     struct dirent *de;
-    while (de = readdir(dr)) {
+    while ((de = readdir(dr))) {
         if (de->d_type == DT_REG) {
 
             sprintf(buff, "%s/%s", args.dir_path, de->d_name);
-            parseFile(buff, &tree);
+            parse_file(buff, parser);
         }
         else if (de->d_type == DT_DIR) {
             // TODO: recursive
         }
     }
-    closedir(dr);// corrupted size vs. prev_size?
+    closedir(dr);
 
-    print_ast(&tree);
-    dealloc_ast(&tree);
+    print_ast(parser);
+
+    destroy_parser(parser);
 }
 
 int parseArgs(int argc, char ** argv){
@@ -74,9 +76,10 @@ int parseArgs(int argc, char ** argv){
     if (!dirSet) {
         return 1;
     }
+    return 0;
 }
 
-int parseFile(const char* filePath, AST_TREE *tree) {
+int parse_file(const char* filePath, Parser *parser) {
     printf("parsing file '%s'...\n", filePath);
 
     FILE *f = fopen(filePath, "r");
@@ -101,8 +104,9 @@ int parseFile(const char* filePath, AST_TREE *tree) {
         printf("\n");
     }
 
-    int comp_unit_index = build_compliation_unit(tree, &r, filePath);
+    parse_lex(parser, &r, filePath);
 
     free(r.tokens);
     free(r.text);
+    return 0;
 }

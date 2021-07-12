@@ -93,7 +93,7 @@ LexResult lex_file(FILE *f) {
 
 static inline bool is_inline_whitespace(char c) { return c == ' ' || c == '\t'; }
 static inline bool is_whitespace(char c) { return is_inline_whitespace(c) || c == '\r' || c == '\n'; }
-static inline bool is_alpha(char c) { return c >= 65 && c <= 90 || c >= 97 && c <= 122; }
+static inline bool is_alpha(char c) { return (c >= 65 && c <= 90) || (c >= 97 && c <= 122); }
 static inline bool is_numeric(char c) { return c >= 48 && c <= 57; }
 static inline bool is_valid_use_path_char(char c) { return is_alpha(c) || is_numeric(c) || c == '-' || c == '_' || c == '/'; }
 static inline bool is_ident_start_char(char c) { return is_alpha(c) || c == '_'; }
@@ -118,11 +118,12 @@ bool read(Lexer *l) {
 }
 
 static inline char peek(Lexer *l) {
-    char p = l->current.ind + 1 < l->text_size
-        ? l->text[l->current.ind + 1]
+    uint16_t i = l->current.ind + 1;
+    char p = i < l->text_size
+        ? l->text[i]
         : -1;
 
-    //debugf(VERBOSITY_HIGH, "Peek: %c\n", p);
+    // debugf(VERBOSITY_HIGH, "Peek: %c (%i)\n", p, p);
     return p;
 }
 
@@ -176,10 +177,12 @@ bool eat_whitespace(Lexer *l) {
 }
 
 bool try_eat_comment(Lexer *l) {
-    if (l->text_size <= l->current.ind + 2) return false;
+    debugf(VERBOSITY_NORMAL, "try_eat_comment\n");
+    if (l->text_size <= (uint16_t)(l->current.ind + 2))
+        return false;
 
-    if (l->text[l->current.ind +1] == '/'){
-        if (l->text[l->current.ind + 2] == '/') {
+    if (l->text[(uint16_t)(l->current.ind +1)] == '/'){
+        if (l->text[(uint16_t)(l->current.ind + 2)] == '/') {
             read(l);
             read(l);
             do
@@ -198,15 +201,15 @@ bool try_parse_reserved_word(Lexer *l, TokenType type, const char* lit) {
     int i = 0;
     for (; lit[i] != '\0'; i++)
     {
-        //debugf(VERBOSITY_HIGH, "%c == %c ?\n", l->text[l->current.ind + i + 1], lit[i]);
-        if (l->current.ind + i >= l->text_size ||
-            l->text[l->current.ind + i + 1] != lit[i])
+        // debugf(VERBOSITY_HIGH, "%c == %c ?\n", l->text[l->current.ind + i + 1], lit[i]);
+        if ((uint16_t)(l->current.ind + i) >= l->text_size ||
+            l->text[(uint16_t)(l->current.ind + i + 1)] != lit[i])
         {
             return false;
         }
     }
 
-    int charAfterLitInd = l->current.ind + i + 1;
+    uint16_t charAfterLitInd = l->current.ind + i + 1;
     if (l->text_size <= charAfterLitInd || is_whitespace(l->text[charAfterLitInd])) {
         start_token(l);
         l->current.col += i;// no newlines in literals
@@ -462,9 +465,9 @@ bool parse_if_statement(Lexer *l) {
 bool parse_numeric_literal(Lexer *l) {
     bool negative = false;
     char p = peek(l);
-    if (p == '-' && l->current.ind + 2 < l->text_size) {
+    if (p == '-' && (uint16_t)(l->current.ind + 2) < l->text_size) {
         negative = true;
-        p = l->text[l->current.ind + 2];
+        p = l->text[(uint16_t)(l->current.ind + 2)];
     }
 
     if (is_numeric(peek(l))) {
@@ -485,6 +488,6 @@ bool parse_numeric_literal(Lexer *l) {
         eat_whitespace(l);
         return true;
     }
+    return false;
 }
-
 
