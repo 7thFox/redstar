@@ -9,9 +9,12 @@
 
 
 typedef struct {
-    AstCompilationUnit  *current_unit;
-    AstBlock            *current_block;
-    const char          *current_text;
+    AstCompilationUnit   *current_unit;
+    AstBlock             *current_block;
+    SyntaxIndex          current_block_index;
+    AstParameterListDecl *current_param_list;
+    AstAttrList          *current_attr_list;
+    const char           *current_text;
 
     Location last_location;
 
@@ -22,6 +25,11 @@ typedef struct {
     SyntaxArray statements;
     SyntaxArray use_statements;
     SyntaxArray attribute_declarations;
+    SyntaxArray func_declarations;
+    SyntaxArray param_list_decls;
+    SyntaxArray param_decls;
+    SyntaxArray types;
+    SyntaxArray attr_lists;
 
     char        *strings;
     StringIndex strings_size;
@@ -41,5 +49,19 @@ void end_block(SyntaxFactory *factory);
 SyntaxIndex make_use_statement(SyntaxFactory *factory, Token *use, Token *name);
 SyntaxIndex make_ident(SyntaxFactory *factory, Token *name);
 SyntaxIndex make_attr_decl(SyntaxFactory *factory, Token *attr, SyntaxIndex ident, SyntaxIndex block);
+SyntaxIndex make_func_decl(SyntaxFactory *factory, 
+    Token *func, 
+    SyntaxIndex ident, 
+    Token *left_paran, 
+    SyntaxIndex param_list_opt, 
+    Token *right_paran, 
+    SyntaxIndex return_type_opt, 
+    SyntaxIndex block);
+SyntaxIndex begin_param_list(SyntaxFactory *factory);
+void end_param_list(SyntaxFactory *factory);
+SyntaxIndex make_param(SyntaxFactory *factory, SyntaxIndex ident, Token *colon, SyntaxIndex type);
+SyntaxIndex make_type(SyntaxFactory *factory, SyntaxIndex attr_list_opt, SyntaxIndex ident);
+SyntaxIndex begin_attr_list(SyntaxFactory *factory, Token *left);
+void end_attr_list(SyntaxFactory *factory);
 
 #endif

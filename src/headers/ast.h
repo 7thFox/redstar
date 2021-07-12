@@ -25,12 +25,38 @@ typedef struct {
 } Location;
 
 typedef struct {
+    SyntaxIndex ident;
+    SyntaxIndex param_list_opt;
+    SyntaxIndex return_type_opt;
+    SyntaxIndex block;
+} AstFuncDecl;
+
+typedef struct {
+    SyntaxIndex param_start;
+    SyntaxIndex param_end_noninclusive;
+} AstParameterListDecl;
+
+typedef struct {
+    SyntaxIndex ident;
+    SyntaxIndex type;
+} AstParameterDecl;
+
+typedef struct {
+    SyntaxIndex attr_list_opt;
+    SyntaxIndex ident;
+} AstType;
+
+typedef struct {
+    SyntaxArray attributes;// SyntaxIndex -> AstIdent
+} AstAttrList;
+
+typedef struct {
     StringIndex name;
 } AstIdent;
 
 typedef struct {
     SyntaxIndex parent_block;
-    SyntaxArray statements;
+    SyntaxArray statements;// StatementIndex
 } AstBlock;
 
 typedef struct {

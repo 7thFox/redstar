@@ -2,6 +2,7 @@
 use core/rand
 
 attr NonZero
+attr Foobar
 
 func divide(num: int, denom: [NonZero] int) int {// aliased by compiler?
     return num / denom;
