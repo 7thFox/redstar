@@ -11,7 +11,6 @@
 typedef struct {
     AstCompilationUnit  *current_unit;
     AstBlock            *current_block;
-    SyntaxIndex         current_block_index;
     const char          *current_text;
 
     Location last_location;
