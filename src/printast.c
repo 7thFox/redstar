@@ -7,7 +7,7 @@ void print_unit(SyntaxFactory *f, SyntaxIndex i);
 void print_block(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_use(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_ident(SyntaxFactory *f, SyntaxIndex i);
-void print_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_statement(SyntaxFactory *f, TypedIndex i, int indent);
 void print_attr_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_func_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_param_list_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
@@ -17,6 +17,9 @@ void print_attr_list(SyntaxFactory *f, SyntaxIndex i);
 void print_return_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_binary_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_local_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_function_call_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_parameter_list(SyntaxFactory *f, SyntaxIndex i, int indent);
 
 void print_ast(Parser *p) {
     for (int i = 0; i < p->factory->compilation_units.size; i++) {
@@ -40,30 +43,32 @@ void print_block(SyntaxFactory *f, SyntaxIndex i, int indent) {
     printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
     printf("BLOCK %i:\n", i);
     for (int i = 0; i < block->statements.size; i++) {
-        print_statement(f, i + 1, 1);
+        print_statement(f, ((TypedIndex*)block->statements.array)[i], indent + 1);
     }
 }
 
-void print_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
-    TypedIndex ind = ((TypedIndex*)f->statements.array)[i - 1];
-    if (!ind.index) return;
+void print_statement(SyntaxFactory *f, TypedIndex i, int indent) {
+    if (!i.index) return;
 
-    switch (ind.kind) {
+    switch (i.kind) {
     case AST_USE:       
-        print_use(f, ind.index, indent);
+        print_use(f, i.index, indent);
         break;
     case AST_ATTR_DECL:
-        print_attr_decl(f, ind.index, indent);
+        print_attr_decl(f, i.index, indent);
         break;
     case AST_FUNC_DECL:
-        print_func_decl(f, ind.index, indent);
+        print_func_decl(f, i.index, indent);
         break;
     case AST_RETURN_STATEMENT:
-        print_return_statement(f, ind.index, indent);
+        print_return_statement(f, i.index, indent);
+        break;
+    case AST_LOCAL_DECL:
+        print_local_decl(f, i.index, indent);
         break;
     default:
     case AST_COMPILATION_UNIT:
-        fprintf(stderr, "Unexpected statement ast type %i\n", ind.kind);
+        fprintf(stderr, "Unexpected statement ast type %i\n", i.kind);
         break;
     }
 }
@@ -137,6 +142,7 @@ void print_attr_list(SyntaxFactory *f, SyntaxIndex i) {
 
 void print_return_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
     AstReturnStatement *smt = ((AstReturnStatement *)f->return_statements.array) + i - 1;
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
     printf("RETURN STATEMENT (%i)\n", i);
     print_expression(f, smt->expression, indent + 1);
 }
@@ -152,6 +158,9 @@ void print_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
         printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
         print_ident(f, index.index);
         printf("\n");
+        break;
+    case AST_FUNC_CALL:
+        print_function_call_expression(f, index.index, indent);
         break;
     default:
         fprintf(stderr, "Unexpected expression type %i\n", index.kind);
@@ -176,3 +185,38 @@ void print_binary_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
     print_expression(f, bin->expression_left, indent + 1);
     print_expression(f, bin->expression_right, indent + 1);
 }
+
+void print_local_decl(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    AstLocalDecl *decl = ((AstLocalDecl *)f->local_decl_statements.array) + i - 1;
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("LOCAL DECL %i: ", i);
+    print_ident(f, decl->ident);
+        printf("\n");
+    if (decl->type_opt) {
+        printf("%.*s", (indent+1) * SPACE_PER_LEVEL, INDENT_CONST);
+        printf("TYPE: ");
+        print_type(f, decl->type_opt);
+        printf("\n");
+    }
+    if (decl->expression_opt) {
+        printf("%.*s", (indent+1) * SPACE_PER_LEVEL, INDENT_CONST);
+        printf("ASSIGNMENT:\n");
+        print_expression(f, decl->expression_opt, indent + 2);
+    }
+}
+
+void print_function_call_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    AstFunctionCallExpression *func = ((AstFunctionCallExpression *)f->function_call_expressions.array) + i - 1;
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("FUNC CALL %i:\n", i);
+
+    print_expression(f, func->expression_left, indent + 1);
+    if (func->parameters_opt) {
+        print_parameter_list(f, func->parameters_opt, indent + 1);
+    }
+}
+
+void print_parameter_list(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    // TODO
+}
+

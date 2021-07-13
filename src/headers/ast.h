@@ -69,7 +69,7 @@ typedef struct {
 
 typedef struct {
     SyntaxIndex parent_block;
-    SyntaxArray statements;// StatementIndex
+    SyntaxArray statements;// TypedIndex (statement)
 } AstBlock;
 
 typedef struct {
@@ -84,5 +84,20 @@ typedef struct {
 typedef struct {
     SyntaxIndex expression;
 } AstReturnStatement;
+
+typedef struct {
+    SyntaxIndex ident;
+    SyntaxIndex type_opt;
+    SyntaxIndex expression_opt;
+} AstLocalDecl;
+
+typedef struct {
+    SyntaxIndex expression_left;
+    SyntaxIndex parameters_opt;// TODO
+} AstFunctionCallExpression;
+
+typedef struct {
+    SyntaxIndex func_call_exp;
+} AstFunctionCallStatement;
 
 #endif

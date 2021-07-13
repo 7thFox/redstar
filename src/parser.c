@@ -47,7 +47,9 @@ SyntaxIndex parse_return_statement(Parser *p);
 SyntaxIndex parse_expression(Parser *p, ExpressionPriority priority);
 SyntaxIndex parse_unary_expression(Parser *p);
 SyntaxIndex parse_binary_expression(Parser *p, SyntaxIndex left, ExpressionPriority priority);
-// SyntaxIndex parse_ident_expression(Parser *p);
+SyntaxIndex parse_local_decl(Parser *p);
+SyntaxIndex parse_func_call_expression(Parser *p, SyntaxIndex left);
+SyntaxIndex parse_func_call_statement(Parser *p);
 
 void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
     // debugf(VERBOSITY_NORMAL, "parse_lex\n");
@@ -55,10 +57,19 @@ void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
     p->n_tokens = lex->n_tokens;
     p->current = -1;
 
+    p->factory->tokens = lex->tokens;
+    p->factory->current_token = &p->current;
+
     begin_compilation_unit(p->factory, lex, file_path);
     while (parse_use_statement(p));
     while (parse_statement(p));
-    // TODO
+
+    if (p->current < p->n_tokens) {
+        fprintf(stderr, "%s:%i:%i: Unrecongnized statement\n",
+                p->factory->strings + p->factory->current_unit->filepath,
+                p->tokens[p->current + 1].p0.line,
+                p->tokens[p->current + 1].p0.col);
+    }
     end_compilation_unit(p->factory);
 }
 
@@ -106,7 +117,9 @@ SyntaxIndex parse_statement(Parser *p) {
     return parse_attr_statement(p) ||
         parse_func_decl(p) ||
         parse_return_statement(p) ||
-        parse_block(p)
+        parse_block(p) ||
+        parse_local_decl(p) ||
+        parse_func_call_statement(p)// do this last because it's pretty awful
         // ... || ...
         ;
 }
@@ -190,13 +203,7 @@ SyntaxIndex parse_block(Parser *p) {
     // debugf(VERBOSITY_NORMAL, "parse_block\n");
     if (accept_token(p, '{')) {
         SyntaxIndex block = begin_block(p->factory);
-        // TODO:
-        // accept_token(p, TOK_RETURN);
-        // accept_token(p, TOK_IDENT);
-        // accept_token(p, '/');
-        // accept_token(p, TOK_IDENT);
-        // accept_token(p, ';');
-
+        
         while (parse_statement(p));
 
         end_block(p->factory);
@@ -217,8 +224,8 @@ SyntaxIndex parse_return_statement(Parser *p) {
         SyntaxIndex exp = parse_expression(p, EXP_ANY);
         SyntaxIndex smt = make_return_statement(p->factory, tok_return, exp);
 
-        if (!accept_token(p, '}')) {
-            fprintf(stderr, "Expected }\n");
+        if (!accept_token(p, ';')) {
+            fprintf(stderr, "Expected ;\n");
         }
 
         return smt;
@@ -229,8 +236,13 @@ SyntaxIndex parse_return_statement(Parser *p) {
 SyntaxIndex parse_expression(Parser *p, ExpressionPriority priority) {
     debugf(VERBOSITY_NORMAL, "parse_expression\n");
     SyntaxIndex left = parse_unary_expression(p);
-    SyntaxIndex bin;
+    
+    SyntaxIndex func;
+    while ((func = parse_func_call_expression(p, left)) != left) {
+        left = func;
+    }
 
+    SyntaxIndex bin;
     while ((bin = parse_binary_expression(p, left, priority)))
     {
         left = bin;
@@ -274,15 +286,103 @@ SyntaxIndex parse_binary_expression(Parser *p, SyntaxIndex left, ExpressionPrior
         right = parse_expression(p, new_priority);
     }
 
+    SyntaxIndex func;
+    while ((func = parse_func_call_expression(p, right)) != right) {
+        right = func;
+    }
+
     return make_binary_expression(p->factory, left, op, right);
 }
 
 SyntaxIndex parse_unary_expression(Parser *p) {
     debugf(VERBOSITY_NORMAL, "parse_unary_expression\n");
     SyntaxIndex exp;
+    SyntaxIndex exp_index;
     if ((exp = parse_ident(p))) {
-        return make_unary_expression(p->factory, exp, AST_IDENT);
+        exp_index = make_unary_expression(p->factory, exp, AST_IDENT);
+    }
+    // else if ...
+    else {
+        return EMPTY_SYNTAX_INDEX;
+    }
+    
+    return exp_index;
+}
+
+SyntaxIndex parse_local_decl(Parser *p) {
+    debugf(VERBOSITY_NORMAL, "parse_local_decl\n");
+    if (peek_token(p, TOK_IDENT) && npeek_token(p, ':', 2)) {
+        SyntaxIndex ident = parse_ident(p);
+        Token *colon = accept_token(p, ':');
+        SyntaxIndex type = EMPTY_SYNTAX_INDEX;
+        Token *equals = 0;
+        SyntaxIndex exp = EMPTY_SYNTAX_INDEX;
+        Token *semicolon = 0;
+        if ((equals = accept_token(p, '='))) {// Implicit type with assignment
+            debugf(VERBOSITY_NORMAL, "imp assign\n");
+            exp = parse_expression(p, EXP_ANY);
+        }
+        else {
+            debugf(VERBOSITY_NORMAL, "imp extype\n");
+            type = parse_type(p);
+            if ((equals = accept_token(p, '='))) {// Explicit type with assignment
+                debugf(VERBOSITY_NORMAL, "with assign\n");
+                exp = parse_expression(p, EXP_ANY);
+            }
+        }
+
+        semicolon = accept_token(p, ';');
+        return make_local_decl(p->factory, 
+            ident, 
+            colon, type,
+            equals, exp,
+            semicolon);
+
     }
     return EMPTY_SYNTAX_INDEX;
 }
 
+SyntaxIndex parse_func_call_expression(Parser *p, SyntaxIndex left_exp) {
+    debugf(VERBOSITY_NORMAL, "parse_func_call_expression\n");
+    Token *left;
+    if ((left = accept_token(p, '('))) {
+        SyntaxIndex param_list = 0;// TODO
+        Token *right = accept_token(p, ')');
+        SyntaxIndex x = make_function_call_expression(p->factory, left_exp, left, param_list, right);
+        return x;
+    }
+    return left_exp;
+}
+
+SyntaxIndex parse_func_call_statement(Parser *p) {
+    debugf(VERBOSITY_NORMAL, "parse_func_call_statement\n");
+    Token *prev = 0;
+    for (token_index i = p->current + 1; i < p->n_tokens; i++) {
+        Token *tok = p->tokens + i;
+        if (tok->type == ';' && prev && prev->type == ')') {
+            // TODO: say a short prayer
+
+            // ... also could probably do some setup to undo the
+            // damage we're about to do, which, if done, we can skip
+            // this lookahead to ;
+
+            bool parsed = false;
+            SyntaxIndex exp = parse_unary_expression(p);
+            SyntaxIndex func;
+            while ((func = parse_func_call_expression(p, exp)) != exp) {
+                exp = func;
+                parsed = true;
+            }
+
+            if (!parsed) {
+                fprintf(stderr, "Failed to parse func call\n");
+                // you may now cry
+            }
+
+            Token *semi = accept_token(p, ';');
+
+            return make_function_call_statement(p->factory, exp, semi);
+        }
+    }
+    return EMPTY_SYNTAX_INDEX;
+}

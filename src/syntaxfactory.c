@@ -4,31 +4,30 @@ SyntaxArray init_array(size_t elem_size, uint16_t cap);
 void *next_array_elem(SyntaxArray *arr);
 StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
-void set_last_location(SyntaxFactory *f, Token *x);
+// void set_last_location(SyntaxFactory *f, Token *x);
 SyntaxIndex add_statement_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k);
 SyntaxIndex make_expression_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k);
 
-#define assert(f, x, kind)                              \
-    if (!x)                                             \
-    {                                                   \
-        fprintf(stderr, "%s:%i:%i: Missing %s\n",       \
-                f->strings + f->current_unit->filepath, \
-                f->last_location.line,                  \
-                f->last_location.col,                   \
-                kind);                                  \
-        return EMPTY_SYNTAX_INDEX;                      \
-    }                                                   \
-    set_last_location(f, x);
+#define assert(f, x, kind)                                  \
+    if (!x)                                                 \
+    {                                                       \
+        fprintf(stderr, "%s:%i:%i: Missing %s\n",           \
+                f->strings + f->current_unit->filepath,     \
+                f->tokens[*(f->current_token) + 1].p0.line, \
+                f->tokens[*(f->current_token) + 1].p0.col,  \
+                kind);                                      \
+        return EMPTY_SYNTAX_INDEX;                          \
+    }
 
-#define assert_node(f, x, kind)                         \
-    if (!x)                                             \
-    {                                                   \
-        fprintf(stderr, "%s:%i:%i: Missing %s\n",       \
-                f->strings + f->current_unit->filepath, \
-                f->last_location.line,                  \
-                f->last_location.col,                   \
-                kind);                                  \
-        return EMPTY_SYNTAX_INDEX;                      \
+#define assert_node(f, x, kind)                             \
+    if (!x)                                                 \
+    {                                                       \
+        fprintf(stderr, "%s:%i:%i: Missing %s\n",           \
+                f->strings + f->current_unit->filepath,     \
+                f->tokens[*(f->current_token) + 1].p0.line, \
+                f->tokens[*(f->current_token) + 1].p0.col,  \
+                kind);                                      \
+        return EMPTY_SYNTAX_INDEX;                          \
     }
 
 SyntaxFactory *make_astfactory() {
@@ -51,9 +50,12 @@ SyntaxFactory *make_astfactory() {
     f->attribute_declarations = init_array(sizeof(AstAttrDecl), 1);
     f->func_declarations = init_array(sizeof(AstFuncDecl), 8);
     f->return_statements = init_array(sizeof(AstReturnStatement), 8);
+    f->local_decl_statements = init_array(sizeof(AstLocalDecl), 8);
+    f->function_call_statements = init_array(sizeof(AstFunctionCallStatement), 8);
 
     f->expressions = init_array(sizeof(TypedIndex), 32);
     f->binary_expressions = init_array(sizeof(AstBinaryOperationExpression), 8);
+    f->function_call_expressions = init_array(sizeof(AstFunctionCallExpression), 16);
 
     f->strings_capacity = 2048;
     f->strings_size = 0;
@@ -73,10 +75,13 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->blocks.array);
 
     free(f->statements.array);
+    free(f->function_call_expressions.array);
+    free(f->function_call_statements.array);
     free(f->attribute_declarations.array);
     free(f->use_statements.array);
     free(f->func_declarations.array);
     free(f->param_list_decls.array);
+    free(f->local_decl_statements.array);
     free(f->param_decls.array);
     free(f->types.array);
     for (int i = 0; i < f->attr_lists.size; i++) {
@@ -95,10 +100,10 @@ SyntaxArray init_array(size_t elem_size, uint16_t cap) {
     return a;
 }
 
-void set_last_location(SyntaxFactory *f, Token *x) {
-    f->last_location.line = x->p1.line;
-    f->last_location.col = x->p1.col;
-}
+// void set_last_location(SyntaxFactory *f, Token *x) {
+//     f->last_location.line = x->p1.line;
+//     f->last_location.col = x->p1.col;
+// }
 
 void *next_array_elem(SyntaxArray *arr) {
     // debugf(VERBOSITY_HIGH, "next_array_elem");
@@ -174,6 +179,7 @@ SyntaxIndex make_expression_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k)
     TypedIndex *index = next_array_elem(&f->expressions);
     index->index = i;
     index->kind = k;
+    debugf(VERBOSITY_HIGH, "make_expression_index %i (%i)\n", f->expressions.size, k);
 
     return f->expressions.size;
 }
@@ -357,4 +363,51 @@ SyntaxIndex make_return_statement(SyntaxFactory *f, Token *return_token, SyntaxI
     AstReturnStatement *smt = next_array_elem(&f->return_statements);
     smt->expression = expression;
     return add_statement_index(f, f->return_statements.size, AST_RETURN_STATEMENT);
+}
+
+SyntaxIndex make_local_decl(SyntaxFactory *f, 
+    SyntaxIndex ident, Token *colon, SyntaxIndex type_opt, 
+    Token *equals_opt, SyntaxIndex expresion_opt, 
+    Token *semicolon) 
+{
+    assert(f, ident, "Ident");
+    assert(f, colon, ":");
+    if (!type_opt) {
+        assert(f, equals_opt, "Assignment or Explicit Type");
+    }
+    if (equals_opt) {
+        assert_node(f, expresion_opt, "Expression for Assignment");
+    }
+    assert(f, semicolon, ";");
+
+    AstLocalDecl *decl = next_array_elem(&f->local_decl_statements);
+    decl->ident = ident;
+    decl->type_opt = type_opt;
+    decl->expression_opt = expresion_opt;
+
+    return add_statement_index(f, f->local_decl_statements.size, AST_LOCAL_DECL);
+}
+
+SyntaxIndex make_function_call_statement(SyntaxFactory *f, SyntaxIndex func_call_exp, Token *semicolon) {
+    debugf(VERBOSITY_HIGH, "make_function_call_statement\n");
+    assert_node(f, func_call_exp, "Expression");
+    assert(f, semicolon, ";");
+
+    AstFunctionCallStatement *call = next_array_elem(&f->function_call_statements);
+    call->func_call_exp = func_call_exp;
+    return add_statement_index(f, f->function_call_statements.size, AST_FUNC_CALL);
+}
+
+SyntaxIndex make_function_call_expression(SyntaxFactory *f, 
+    SyntaxIndex expression, Token *left, SyntaxIndex param_list_opt, Token *right) {
+    debugf(VERBOSITY_HIGH, "make_function_call_expression\n");
+    assert_node(f, expression, "Expression");
+    assert(f, left, "(");
+    assert(f, right, ")");
+    AstFunctionCallExpression *exp = next_array_elem(&f->function_call_expressions);
+    exp->expression_left = expression;
+    exp->parameters_opt = param_list_opt;
+    SyntaxIndex x = make_expression_index(f, f->function_call_expressions.size, AST_FUNC_CALL);
+
+    return x;
 }

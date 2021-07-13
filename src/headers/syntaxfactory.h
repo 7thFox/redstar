@@ -7,7 +7,6 @@
 #include "lexer.h"
 #include "syntaxindex.h"
 
-
 typedef struct {
     AstCompilationUnit   *current_unit;
     AstBlock             *current_block;
@@ -16,7 +15,10 @@ typedef struct {
     AstAttrList          *current_attr_list;
     const char           *current_text;
 
-    Location last_location;
+    // kinda hackish but I want that location...
+    Token *tokens;
+    token_index *current_token;
+    // Location last_location;
 
     SyntaxArray compilation_units;
     SyntaxArray identifiers;
@@ -31,9 +33,12 @@ typedef struct {
     SyntaxArray attribute_declarations;
     SyntaxArray func_declarations;
     SyntaxArray return_statements;
+    SyntaxArray local_decl_statements;
+    SyntaxArray function_call_statements;
 
     SyntaxArray expressions;
     SyntaxArray binary_expressions;
+    SyntaxArray function_call_expressions;
 
     char        *strings;
     StringIndex strings_size;
@@ -72,5 +77,8 @@ SyntaxIndex make_unary_expression(SyntaxFactory *factory,
 SyntaxIndex make_binary_expression(SyntaxFactory *factory,
     SyntaxIndex left, Token *op, SyntaxIndex right);
 SyntaxIndex make_return_statement(SyntaxFactory *factory, Token *return_token, SyntaxIndex expression);
+SyntaxIndex make_local_decl(SyntaxFactory *factory, SyntaxIndex ident, Token *colon, SyntaxIndex type_opt, Token *equals_opt, SyntaxIndex expresion_opt, Token *semicolon);
+SyntaxIndex make_function_call_statement(SyntaxFactory *factory, SyntaxIndex func_call_exp, Token *semicolon);
+SyntaxIndex make_function_call_expression(SyntaxFactory *factory, SyntaxIndex expression, Token *left, SyntaxIndex param_list_opt, Token *right);
 
 #endif

@@ -130,14 +130,14 @@ static inline char peek(Lexer *l) {
 void start_token(Lexer *l) {
     // TODO: check buffer size and resize if needed
     l->token_buffer[l->token_count].p0.line = l->current.line;
-    l->token_buffer[l->token_count].p0.col = l->current.col + 1;
+    l->token_buffer[l->token_count].p0.col = l->current.col;//  +1;
     l->token_buffer[l->token_count].p0.ind = l->current.ind + 1;
 }
 
 void emit_token(Lexer *l, TokenType type) {
     l->token_buffer[l->token_count].type = type;
     l->token_buffer[l->token_count].p1.line = l->current.line;
-    l->token_buffer[l->token_count].p1.col = l->current.col + 1;
+    l->token_buffer[l->token_count].p1.col = l->current.col;//  +1;
     l->token_buffer[l->token_count].p1.ind = l->current.ind + 1;
 
     // TODO?
