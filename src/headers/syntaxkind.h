@@ -11,6 +11,9 @@ typedef enum {
     AST_BINARY_EXPRESSION,
     AST_LOCAL_DECL,
     AST_FUNC_CALL,
+    AST_IF_STATEMENT,
+    AST_LITERAL,
+    AST_BLOCK,
 } SyntaxKind;
 
 #endif

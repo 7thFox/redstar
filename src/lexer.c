@@ -1,4 +1,6 @@
 #include "headers/lexer.h"
+#define debugf(...) ;
+// #define debugf(...) printf(__VA_ARGS__)
 
 typedef struct {
     char c;
@@ -153,7 +155,7 @@ void emit_token(Lexer *l, TokenType type) {
 // helpers:
 
 bool eat_inline_whitespace(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "eat_inline_whitespace\n");
+    debugf("eat_inline_whitespace\n");
     bool ws = false;
     while (is_inline_whitespace(peek(l)))
     {
@@ -165,7 +167,7 @@ bool eat_inline_whitespace(Lexer *l) {
 }
 
 bool eat_whitespace(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "eat_whitespace \n");
+    debugf("eat_whitespace \n");
     bool ws = false;
     while (1)
     {
@@ -181,7 +183,7 @@ bool eat_whitespace(Lexer *l) {
 }
 
 bool try_eat_comment(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "try_eat_comment\n");
+    debugf("try_eat_comment\n");
     if (l->text_size <= (uint16_t)(l->current.ind + 2))
         return false;
 
@@ -201,7 +203,7 @@ bool try_eat_comment(Lexer *l) {
 }
 
 bool try_lex_reserved_word(Lexer *l, TokenType type, const char* lit) {
-    debugf(VERBOSITY_NORMAL, "try_lex_reserved_word '%s'\n", lit);
+    debugf("try_lex_reserved_word '%s'\n", lit);
     int i = 0;
     for (; lit[i] != '\0'; i++)
     {
@@ -226,7 +228,7 @@ bool try_lex_reserved_word(Lexer *l, TokenType type, const char* lit) {
 }
 
 bool try_lex_char_literal(Lexer *l, char lit) {
-    debugf(VERBOSITY_NORMAL, "try_lex_char_literal '%c'\n", lit);
+    debugf("try_lex_char_literal '%c'\n", lit);
     if (peek(l) == lit) {
         start_token(l);
         read(l);
@@ -256,7 +258,7 @@ static inline bool required(Lexer *l, bool ret_val, const char * desc) {
 //////////////////////////////////
 
 bool lex_use(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_use \n");
+    debugf("lex_use \n");
     if (try_lex_reserved_word(l, TOK_USE, "use"))
     {
         start_token(l);
@@ -270,7 +272,7 @@ bool lex_use(Lexer *l) {
 }
 
 bool lex_statement(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_statement \n");
+    debugf("lex_statement \n");
 
     return 
         lex_attr_def(l) ||
@@ -293,7 +295,7 @@ bool lex_attr_def(Lexer *l) {
 }
 
 bool lex_ident(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_ident \n");
+    debugf("lex_ident \n");
     if (is_ident_start_char(peek(l))) {
         start_token(l);
         read(l);
@@ -307,7 +309,7 @@ bool lex_ident(Lexer *l) {
 }
 
 bool lex_func_def(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_func_def \n");
+    debugf("lex_func_def \n");
     if (try_lex_reserved_word(l, TOK_FUNC, "func"))
     {
         lex_ident(l);
@@ -326,7 +328,7 @@ bool lex_func_def(Lexer *l) {
 }
 
 bool lex_param_def(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_param_def \n");
+    debugf("lex_param_def \n");
     if (lex_ident(l)) {
         try_lex_char_literal(l, ':');
         lex_type_name(l);
@@ -336,7 +338,7 @@ bool lex_param_def(Lexer *l) {
 }
 
 void lex_type_name(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_type_name \n");
+    debugf("lex_type_name \n");
     lex_attr(l);
     lex_ident(l);
     // TODO: pointers?
@@ -344,7 +346,7 @@ void lex_type_name(Lexer *l) {
 }
 
 void lex_attr(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_attr \n");
+    debugf("lex_attr \n");
     if (try_lex_char_literal(l, '[')) {
         while (lex_ident(l));
         required(l, try_lex_char_literal(l, ']'), "] or ident");
@@ -352,7 +354,7 @@ void lex_attr(Lexer *l) {
 }
 
 bool lex_return(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_return \n");
+    debugf("lex_return \n");
     if (try_lex_reserved_word(l, TOK_RETURN, "return")) {
         required(l, lex_expression(l), "expression");
         required(l, try_lex_char_literal(l, ';'), ";");
@@ -362,7 +364,7 @@ bool lex_return(Lexer *l) {
 }
 
 bool lex_expression(Lexer *l) {
-    debugf(VERBOSITY_NORMAL, "lex_expression \n");
+    debugf("lex_expression \n");
 
     if (try_lex_char_literal(l, '(')) {
         lex_expression(l);
@@ -494,4 +496,5 @@ bool lex_numeric_literal(Lexer *l) {
     }
     return false;
 }
+
 

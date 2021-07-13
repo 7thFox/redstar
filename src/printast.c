@@ -1,7 +1,7 @@
 #include "headers/printast.h"
 
 #define SPACE_PER_LEVEL 2
-#define INDENT_CONST "                                            "
+#define INDENT_CONST "| | | | | | | | | | | | | | | | | | | | | | "
 
 void print_unit(SyntaxFactory *f, SyntaxIndex i);
 void print_block(SyntaxFactory *f, SyntaxIndex i, int indent);
@@ -20,6 +20,8 @@ void print_binary_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_local_decl(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_function_call_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_parameter_list(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_if_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_literal_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
 
 void print_ast(Parser *p) {
     for (int i = 0; i < p->factory->compilation_units.size; i++) {
@@ -65,6 +67,12 @@ void print_statement(SyntaxFactory *f, TypedIndex i, int indent) {
         break;
     case AST_LOCAL_DECL:
         print_local_decl(f, i.index, indent);
+        break;
+    case AST_IF_STATEMENT:
+        print_if_statement(f, i.index, indent);
+        break;
+    case AST_BLOCK:
+        print_block(f, i.index, indent);
         break;
     default:
     case AST_COMPILATION_UNIT:
@@ -162,6 +170,9 @@ void print_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
     case AST_FUNC_CALL:
         print_function_call_expression(f, index.index, indent);
         break;
+    case AST_LITERAL:
+        print_literal_expression(f, index.index, indent);
+        break;
     default:
         fprintf(stderr, "Unexpected expression type %i\n", index.kind);
         break;
@@ -175,10 +186,12 @@ void print_binary_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
     const char *op = "ERR";
 
     switch(bin->operation) {
-    case BIN_ADD:      op = "+"; break;
-    case BIN_MINUS:    op = "-"; break;
-    case BIN_MULTIPLY: op = "*"; break;
-    case BIN_DIVIDE:   op = "/"; break;
+    case BIN_ADD:        op = "+"; break;
+    case BIN_MINUS:      op = "-"; break;
+    case BIN_MULTIPLY:   op = "*"; break;
+    case BIN_DIVIDE:     op = "/"; break;
+    case BIN_EQUALS:     op = "=="; break;
+    case BIN_NOT_EQUALS: op = "!="; break;
     }
 
     printf("BIN EXP (%i) '%s'\n", i, op);
@@ -220,3 +233,16 @@ void print_parameter_list(SyntaxFactory *f, SyntaxIndex i, int indent) {
     // TODO
 }
 
+void print_if_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    AstIfStatement *is = ((AstIfStatement *)f->if_statements.array) + i - 1;
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("IF STMT %i:\n", i);
+    print_expression(f, is->condition, indent + 1);
+    print_statement(f, ((TypedIndex*)f->statements.array)[is->statement - 1], indent + 1);
+}
+
+void print_literal_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    AstLiteralExpression *lit = ((AstLiteralExpression *)f->literal_expressions.array) + i - 1;
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("LITERAL %i: %s\n", i, f->strings + lit->string_value);
+}

@@ -7,6 +7,8 @@
 #include "stdio.h"
 #include <stdlib.h>
 #include <string.h>
+#define debugf(...) ;
+// #define debugf(...) printf(__VA_ARGS__)
 
 typedef struct {
     char *dir_path;
@@ -26,7 +28,7 @@ int main(int argc, char ** argv) {
     }
 
     DIR *dr;
-    debugf(VERBOSITY_NORMAL, "root dir: %s\n", args.dir_path);
+    debugf("root dir: %s\n", args.dir_path);
 
     if (!(dr = opendir(args.dir_path)))
     {
@@ -60,7 +62,7 @@ int parseArgs(int argc, char ** argv){
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-debug") == 0) {
-            debugf(VERBOSITY_HIGH, "DEBUG\n");
+            debugf("DEBUG\n");
             args.is_debug = 1;
         }
         else if (strcmp(argv[i], "-printlex") == 0) {

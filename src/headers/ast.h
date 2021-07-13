@@ -12,6 +12,8 @@ typedef enum {
     BIN_DIVIDE,
     BIN_ADD,
     BIN_MINUS,
+    BIN_EQUALS,
+    BIN_NOT_EQUALS,
 } BinaryOperationKind;
 
 typedef struct {
@@ -99,5 +101,19 @@ typedef struct {
 typedef struct {
     SyntaxIndex func_call_exp;
 } AstFunctionCallStatement;
+
+typedef struct {
+    SyntaxIndex condition;
+    SyntaxIndex statement;
+} AstIfStatement;
+
+typedef struct {
+    TokenType type;
+    StringIndex string_value;
+} AstLiteralExpression;
+
+typedef struct {
+    SyntaxArray param_expressions;// TypedIndex
+} AstParamList;
 
 #endif

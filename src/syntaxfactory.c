@@ -1,4 +1,6 @@
 #include "headers/syntaxfactory.h"
+#define debugf(...) ;
+// #define debugf(...) printf(__VA_ARGS__)
 
 SyntaxArray init_array(size_t elem_size, uint16_t cap);
 void *next_array_elem(SyntaxArray *arr);
@@ -36,6 +38,7 @@ SyntaxFactory *make_astfactory() {
     f->current_text = 0;
     f->current_unit = 0;
     f->current_block = 0;
+    f->current_block = 0;
 
     f->compilation_units = init_array(sizeof(AstCompilationUnit), 8);
     f->identifiers = init_array(sizeof(AstIdent), 128);
@@ -52,10 +55,13 @@ SyntaxFactory *make_astfactory() {
     f->return_statements = init_array(sizeof(AstReturnStatement), 8);
     f->local_decl_statements = init_array(sizeof(AstLocalDecl), 8);
     f->function_call_statements = init_array(sizeof(AstFunctionCallStatement), 8);
+    f->if_statements = init_array(sizeof(AstIfStatement), 8);
 
     f->expressions = init_array(sizeof(TypedIndex), 32);
     f->binary_expressions = init_array(sizeof(AstBinaryOperationExpression), 8);
     f->function_call_expressions = init_array(sizeof(AstFunctionCallExpression), 16);
+    f->literal_expressions = init_array(sizeof(AstLiteralExpression), 16);
+    f->param_lists = init_array(sizeof(AstParamList), 16);
 
     f->strings_capacity = 2048;
     f->strings_size = 0;
@@ -65,29 +71,38 @@ SyntaxFactory *make_astfactory() {
 }
 
 void destroy_astfactory(SyntaxFactory *f) {
-    free(f->strings);
-    free(f->compilation_units.array);
-    free(f->identifiers.array);
-
     for (int i = 0; i < f->blocks.size; i++) {
         free(((AstBlock *)f->blocks.array)[i].statements.array);
     }
     free(f->blocks.array);
 
-    free(f->statements.array);
-    free(f->function_call_expressions.array);
-    free(f->function_call_statements.array);
-    free(f->attribute_declarations.array);
-    free(f->use_statements.array);
-    free(f->func_declarations.array);
-    free(f->param_list_decls.array);
-    free(f->local_decl_statements.array);
-    free(f->param_decls.array);
-    free(f->types.array);
+    for (int i = 0; i < f->param_lists.size; i++) {
+        free(((AstParamList *)f->param_lists.array)[i].param_expressions.array);
+    }
+    free(f->param_lists.array);
+
     for (int i = 0; i < f->attr_lists.size; i++) {
         free(((AstAttrList *)f->attr_lists.array)[i].attributes.array);
     }
     free(f->attr_lists.array);
+
+    free(f->strings);
+    free(f->compilation_units.array);
+
+    free(f->statements.array);
+    free(f->function_call_statements.array);
+    free(f->attribute_declarations.array);
+    free(f->use_statements.array);
+    free(f->func_declarations.array);
+    free(f->local_decl_statements.array);
+    free(f->if_statements.array);
+
+    free(f->function_call_expressions.array);
+    free(f->param_list_decls.array);
+    free(f->param_decls.array);
+    free(f->types.array);
+    free(f->identifiers.array);
+    free(f->literal_expressions.array);
 }
 
 SyntaxArray init_array(size_t elem_size, uint16_t cap) {
@@ -167,7 +182,7 @@ SyntaxIndex add_statement_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k) {
     index->kind = k;
 
     if (f->current_block) {
-        debugf(VERBOSITY_HIGH, "add_statement_index current_block %x\n", f->current_block, i);
+        debugf("add_statement_index current_block %p (%i)\n", (void*)f->current_block, i);
         TypedIndex *block_index = next_array_elem(& f->current_block->statements);
         *block_index = *index;
     }
@@ -179,13 +194,13 @@ SyntaxIndex make_expression_index(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k)
     TypedIndex *index = next_array_elem(&f->expressions);
     index->index = i;
     index->kind = k;
-    debugf(VERBOSITY_HIGH, "make_expression_index %i (%i)\n", f->expressions.size, k);
+    debugf("make_expression_index %i (%i)\n", f->expressions.size, k);
 
     return f->expressions.size;
 }
 
 SyntaxIndex begin_compilation_unit(SyntaxFactory *f, LexResult *lex, const char *file_path) {
-    debugf(VERBOSITY_NORMAL, "begin_compilation_unit\n");
+    debugf("begin_compilation_unit\n");
     // TODO: Search for referenced comp unit first
     f->current_text = lex->text;
     f->current_unit = next_array_elem(&(f->compilation_units));
@@ -207,12 +222,12 @@ SyntaxIndex begin_block(SyntaxFactory *f) {
     
     f->current_block = block;
     f->current_block_index = f->blocks.size;
-    debugf(VERBOSITY_NORMAL, "begin_block %x (%i)\n", f->current_block, f->current_block_index);
+    debugf("begin_block %p (%i)\n", (void*)f->current_block, f->current_block_index);
     return f->blocks.size;
 }
 
 void end_block(SyntaxFactory *f) {
-    debugf(VERBOSITY_NORMAL, "end_block %x (%i)\n", f->current_block, f->current_block_index);
+    debugf("end_block %p (%i)\n", (void*)f->current_block, f->current_block_index);
     if (f->current_block) {
         if (f->current_block->parent_block) {
             f->current_block_index = f->current_block->parent_block;
@@ -226,7 +241,7 @@ void end_block(SyntaxFactory *f) {
 }
 
 SyntaxIndex make_use_statement(SyntaxFactory *f, Token *use_tok, Token *name) {
-    debugf(VERBOSITY_NORMAL, "make_use_statement\n");
+    debugf("make_use_statement\n");
     assert(f, use_tok, "Use Keyword");
     assert(f, name, "Use Path");
     AstUseStatement *use = next_array_elem(&(f->use_statements));
@@ -238,12 +253,12 @@ SyntaxIndex make_ident(SyntaxFactory *f, Token *name) {
     assert(f, name, "Ident Name");
     AstIdent *ident = next_array_elem(&f->identifiers);
     ident->name = copy_token_string(f, name);
-    debugf(VERBOSITY_NORMAL, "make_ident %i\n", f->identifiers.size);
+    debugf("make_ident %i\n", f->identifiers.size);
     return f->identifiers.size;
 }
 
 SyntaxIndex make_attr_decl(SyntaxFactory *f, Token *attr, SyntaxIndex ident, SyntaxIndex block) {
-    debugf(VERBOSITY_NORMAL, "make_attr_decl %i\n", ident);
+    debugf("make_attr_decl %i\n", ident);
     assert(f, attr, "Attr Keyword");
     assert_node(f, ident, "Ident");
     AstAttrDecl *decl = next_array_elem(&f->attribute_declarations);
@@ -276,16 +291,16 @@ SyntaxIndex make_func_decl(SyntaxFactory *f,
     return add_statement_index(f, f->func_declarations.size, AST_FUNC_DECL);
 }
 
-SyntaxIndex begin_param_list(SyntaxFactory *f) {
-    f->current_param_list = next_array_elem(&f->param_list_decls);
-    f->current_param_list->param_start = f->param_decls.size + 1;
+SyntaxIndex begin_param_list_decl(SyntaxFactory *f) {
+    f->current_param_list_decl = next_array_elem(&f->param_list_decls);
+    f->current_param_list_decl->param_start = f->param_decls.size + 1;
 
     return f->param_list_decls.size;
 }
 
-void end_param_list(SyntaxFactory *f) {
-    f->current_param_list->param_end_noninclusive = f->param_decls.size + 1;
-    f->current_param_list = 0;
+void end_param_list_decl(SyntaxFactory *f) {
+    f->current_param_list_decl->param_end_noninclusive = f->param_decls.size + 1;
+    f->current_param_list_decl = 0;
 }
 
 SyntaxIndex make_param(SyntaxFactory *f, SyntaxIndex ident, Token *colon, SyntaxIndex type) {
@@ -342,6 +357,9 @@ SyntaxIndex make_binary_expression(SyntaxFactory *f, SyntaxIndex left, Token *op
     case '-': exp->operation = BIN_MINUS; break;
     case '*': exp->operation = BIN_MULTIPLY; break;
     case '/': exp->operation = BIN_DIVIDE; break;
+
+    case TOK_EQUALITY:   exp->operation = BIN_EQUALS; break;
+    case TOK_NOT_EQUALS: exp->operation = BIN_NOT_EQUALS; break;
     // case '%': new_priority = EXP_ADD; break;
     // case TOK_OR: new_priority = EXP_ADD; break;
     // case TOK_AND: new_priority = EXP_ADD; break;
@@ -389,7 +407,7 @@ SyntaxIndex make_local_decl(SyntaxFactory *f,
 }
 
 SyntaxIndex make_function_call_statement(SyntaxFactory *f, SyntaxIndex func_call_exp, Token *semicolon) {
-    debugf(VERBOSITY_HIGH, "make_function_call_statement\n");
+    debugf("make_function_call_statement\n");
     assert_node(f, func_call_exp, "Expression");
     assert(f, semicolon, ";");
 
@@ -400,7 +418,7 @@ SyntaxIndex make_function_call_statement(SyntaxFactory *f, SyntaxIndex func_call
 
 SyntaxIndex make_function_call_expression(SyntaxFactory *f, 
     SyntaxIndex expression, Token *left, SyntaxIndex param_list_opt, Token *right) {
-    debugf(VERBOSITY_HIGH, "make_function_call_expression\n");
+    debugf("make_function_call_expression\n");
     assert_node(f, expression, "Expression");
     assert(f, left, "(");
     assert(f, right, ")");
@@ -410,4 +428,54 @@ SyntaxIndex make_function_call_expression(SyntaxFactory *f,
     SyntaxIndex x = make_expression_index(f, f->function_call_expressions.size, AST_FUNC_CALL);
 
     return x;
+}
+
+SyntaxIndex make_if_statement(SyntaxFactory *f, Token *if_tok, Token *left, SyntaxIndex cond, Token *right, SyntaxIndex stmt) {
+    debugf("make_if_statement\n");
+    assert(f, if_tok, "If Keyword");
+    assert(f, left, "(");
+    assert_node(f, cond, "Condition Expression");
+    assert(f, right, ")");
+    assert_node(f, stmt, "Statement");
+
+    AstIfStatement *is = next_array_elem(&f->if_statements);
+    is->condition = cond;
+    is->statement = stmt;
+    return add_statement_index(f, f->if_statements.size, AST_IF_STATEMENT);
+}
+
+SyntaxIndex make_literal_expression(SyntaxFactory *f, Token *token) {
+    debugf("make_literal_expression\n");
+    assert(f, token, "Literal Value");
+    AstLiteralExpression *lit = next_array_elem(&f->literal_expressions);
+    lit->string_value = copy_token_string(f, token);
+    lit->type = token->type;
+    return make_expression_index(f, f->literal_expressions.size, AST_LITERAL);
+}
+
+SyntaxIndex make_param_list(SyntaxFactory *f) {
+    debugf("make_param_list\n");
+    AstParamList *list = next_array_elem(&f->param_lists);
+    list->param_expressions = init_array(sizeof(SyntaxIndex), 1);
+    return f->param_lists.size;
+}
+
+SyntaxIndex add_param(SyntaxFactory *f, SyntaxIndex list, SyntaxIndex exp) {
+    debugf("add_param\n");
+    if (list) {
+        assert_node(f, exp, "Expression");
+        AstParamList *l = ((AstParamList *)f->param_lists.array) + list - 1;
+        SyntaxIndex *i = next_array_elem(&l->param_expressions);
+        *i = exp;
+        return l->param_expressions.size;
+    }
+    return EMPTY_SYNTAX_INDEX;
+}
+
+SyntaxIndex block_as_statement(SyntaxFactory *f, SyntaxIndex block) {
+    if (block) {
+        add_statement_index(f, block, AST_BLOCK);
+        return f->statements.size;
+    }
+    return EMPTY_SYNTAX_INDEX;
 }
