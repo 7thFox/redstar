@@ -389,6 +389,10 @@ SyntaxIndex parse_func_call_expression(Parser *p, ExpressionIndex left_exp) {
                 add_param(p->factory, param_list,
                     parse_expression(p, EXP_ANY));
             } while (accept_token(p, ','));
+
+            if (!accept_token(p, ')')) {
+                fprintf(stderr, "Expected ) or ,\n");
+            }
         }
         return make_function_call(p->factory, left_exp, left, param_list, right);
     }

@@ -66,7 +66,6 @@ void print_statement(SyntaxFactory *f, StatementIndex stmt_ind, int indent) {
         print_attr_decl(f, i.index, indent);
         break;
     case AST_FUNC_DECL:
-    printf("FOOBAR\n");
         print_func_decl(f, i.index, indent);
         break;
     case AST_RETURN_STATEMENT:
