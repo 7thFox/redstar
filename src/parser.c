@@ -83,7 +83,7 @@ void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
         add_statement(p->factory, block, s);
     }
 
-    if (p->current < p->n_tokens) {
+    if (p->current != p->n_tokens-1) {
         fprintf(stderr, "%s:%i:%i: Unrecongnized statement\n",
                 p->factory->strings + p->factory->current_filepath.i,
                 p->tokens[p->current + 1].p0.line,
@@ -99,6 +99,7 @@ Token* accept_token(Parser *p, TokenType type) {
     if (next < p->n_tokens &&
         (tok = p->tokens + next)->type == type)
     {
+        // printf("%c %i\n", type, type);
         p->current = next;
         return tok;
     }
@@ -390,7 +391,7 @@ SyntaxIndex parse_func_call_expression(Parser *p, ExpressionIndex left_exp) {
                     parse_expression(p, EXP_ANY));
             } while (accept_token(p, ','));
 
-            if (!accept_token(p, ')')) {
+            if (!(right = accept_token(p, ')'))) {
                 fprintf(stderr, "Expected ) or ,\n");
             }
         }
