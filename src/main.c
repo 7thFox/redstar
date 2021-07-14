@@ -23,7 +23,7 @@ program_args args;
 
 int main(int argc, char ** argv) {
     if (parseArgs(argc, argv) != 0) {
-        printf("failed to parse args\n");
+        fprintf(stderr, "failed to parse args\n");
         return 1;
     }
 
@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
 
     if (!(dr = opendir(args.dir_path)))
     {
-        printf("Could not open directory '%s'\n", args.dir_path);
+        fprintf(stderr, "Could not open directory '%s'\n", args.dir_path);
         return 1;
     }
 
@@ -82,11 +82,11 @@ int parseArgs(int argc, char ** argv){
 }
 
 int parse_file(const char* filePath, Parser *parser) {
-    printf("parsing file '%s'...\n", filePath);
+    debugf("parsing file '%s'...\n", filePath);
 
     FILE *f = fopen(filePath, "r");
     if (!f) {
-        printf("Failed to open file '%s'\n", filePath);
+        fprintf(stderr, "Failed to open file '%s'\n", filePath);
         return 1;
     }
 
