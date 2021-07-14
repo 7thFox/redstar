@@ -19,8 +19,7 @@ typedef enum {
 typedef struct {
     SyntaxIndex index;
     SyntaxKind  kind;
-
-} TypedIndex;
+} _TypedIndex;
 
 typedef struct {
     StringIndex filepath;
@@ -28,9 +27,9 @@ typedef struct {
 } AstCompilationUnit;
 
 typedef struct {
-    SyntaxIndex expression_left;
+    ExpressionIndex expression_left;
     BinaryOperationKind operation;
-    SyntaxIndex expression_right;
+    ExpressionIndex expression_right;
 } AstBinaryOperationExpression;
 
 typedef struct {
@@ -47,8 +46,7 @@ typedef struct {
 } AstFuncDecl;
 
 typedef struct {
-    SyntaxIndex param_start;
-    SyntaxIndex param_end_noninclusive;
+    SyntaxArray param_decls;// [SyntaxIndex] -> AstParameterDecl
 } AstParameterListDecl;
 
 typedef struct {
@@ -62,7 +60,7 @@ typedef struct {
 } AstType;
 
 typedef struct {
-    SyntaxArray attributes;// SyntaxIndex -> AstIdent
+    SyntaxArray attributes;// [SyntaxIndex] -> AstIdent
 } AstAttrList;
 
 typedef struct {
@@ -70,8 +68,7 @@ typedef struct {
 } AstIdent;
 
 typedef struct {
-    SyntaxIndex parent_block;
-    SyntaxArray statements;// TypedIndex (statement)
+    SyntaxArray statements;// [StatementIndex]
 } AstBlock;
 
 typedef struct {
@@ -84,27 +81,23 @@ typedef struct {
 } AstUseStatement;
 
 typedef struct {
-    SyntaxIndex expression;
+    ExpressionIndex expression;
 } AstReturnStatement;
 
 typedef struct {
     SyntaxIndex ident;
     SyntaxIndex type_opt;
-    SyntaxIndex expression_opt;
+    ExpressionIndex expression_opt;
 } AstLocalDecl;
 
 typedef struct {
-    SyntaxIndex expression_left;
-    SyntaxIndex parameters_opt;// TODO
-} AstFunctionCallExpression;
+    ExpressionIndex expression_left;
+    SyntaxIndex parameters_opt;
+} AstFunctionCall;
 
 typedef struct {
-    SyntaxIndex func_call_exp;
-} AstFunctionCallStatement;
-
-typedef struct {
-    SyntaxIndex condition;
-    SyntaxIndex statement;
+    ExpressionIndex condition;
+    StatementIndex  statement;
 } AstIfStatement;
 
 typedef struct {
@@ -113,7 +106,7 @@ typedef struct {
 } AstLiteralExpression;
 
 typedef struct {
-    SyntaxArray param_expressions;// TypedIndex
+    SyntaxArray param_expressions;// [ExpressionIndex]
 } AstParamList;
 
 #endif

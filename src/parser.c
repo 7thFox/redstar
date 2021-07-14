@@ -41,7 +41,7 @@ Token *npeek_token(Parser *p, TokenType type, token_index n);
 // Parse Functions
 SyntaxIndex parse_use_statement(Parser *p);
 SyntaxIndex parse_block(Parser *p);
-SyntaxIndex parse_statement(Parser *p);
+StatementIndex parse_statement(Parser *p);
 SyntaxIndex parse_attr_statement(Parser *p);
 SyntaxIndex parse_func_decl(Parser *p);
 SyntaxIndex parse_parameter_list_decl(Parser *p);
@@ -49,11 +49,11 @@ SyntaxIndex parse_ident(Parser *p);
 SyntaxIndex parse_type(Parser *p);
 SyntaxIndex parse_block(Parser *p);
 SyntaxIndex parse_return_statement(Parser *p);
-SyntaxIndex parse_expression(Parser *p, ExpressionPriority priority);
-SyntaxIndex parse_unary_expression(Parser *p);
-SyntaxIndex parse_binary_expression(Parser *p, SyntaxIndex left, ExpressionPriority priority);
+ExpressionIndex parse_expression(Parser *p, ExpressionPriority priority);
+ExpressionIndex parse_unary_expression(Parser *p);
+ExpressionIndex parse_binary_expression(Parser *p, ExpressionIndex left, ExpressionPriority priority);
 SyntaxIndex parse_local_decl(Parser *p);
-SyntaxIndex parse_func_call_expression(Parser *p, SyntaxIndex left);
+SyntaxIndex parse_func_call_expression(Parser *p, ExpressionIndex left);
 SyntaxIndex parse_func_call_statement(Parser *p);
 SyntaxIndex parse_if_statement(Parser *p);
 SyntaxIndex parse_literal_expression(Parser *p);
@@ -67,17 +67,28 @@ void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
     p->factory->tokens = lex->tokens;
     p->factory->current_token = &p->current;
 
-    begin_compilation_unit(p->factory, lex, file_path);
-    while (parse_use_statement(p));
-    while (parse_statement(p));
+    SyntaxIndex unit_index = make_compilation_unit(p->factory, lex, file_path);
+    AstCompilationUnit *unit = get_ast_node(unit_index, p->factory->compilation_units);
+    p->factory->current_filepath = unit->filepath;
+    SyntaxIndex block = unit->block;
+
+    SyntaxIndex u;
+    while ((u = parse_use_statement(p)).i) {
+        add_statement(p->factory, block, 
+            make_statement(p->factory, u, AST_USE));
+    }
+
+    StatementIndex s;
+    while ((s = parse_statement(p)).i) {
+        add_statement(p->factory, block, s);
+    }
 
     if (p->current < p->n_tokens) {
         fprintf(stderr, "%s:%i:%i: Unrecongnized statement\n",
-                p->factory->strings + p->factory->current_unit->filepath,
+                p->factory->strings + p->factory->current_filepath.i,
                 p->tokens[p->current + 1].p0.line,
                 p->tokens[p->current + 1].p0.col);
     }
-    end_compilation_unit(p->factory);
 }
 
 // Helper Functions
@@ -119,19 +130,27 @@ SyntaxIndex parse_use_statement(Parser *p) {
     return EMPTY_SYNTAX_INDEX;
 }
 
-SyntaxIndex parse_statement(Parser *p) {
+StatementIndex parse_statement(Parser *p) {
     debugf("parse_statement\n");
-    return 
-        // Leads with keyword
-        parse_attr_statement(p) ||
-        parse_func_decl(p) ||
-        parse_return_statement(p) ||
-        block_as_statement(p->factory, parse_block(p)) ||
-        parse_if_statement(p) ||
-        // Others
-        parse_local_decl(p) ||
-        parse_func_call_statement(p)// do this last because it's pretty awful
-        ;
+
+#define try_parse_stmt(fn, k)                      \
+    if ((ind = fn(p)).i)                           \
+    {                                              \
+        return make_statement(p->factory, ind, k); \
+    }
+
+    SyntaxIndex ind;
+    // Leads with keyword
+    try_parse_stmt(parse_attr_statement, AST_ATTR_DECL);
+    try_parse_stmt(parse_func_decl, AST_FUNC_DECL);
+    try_parse_stmt(parse_return_statement, AST_RETURN_STATEMENT);
+    try_parse_stmt(parse_block, AST_BLOCK);
+    try_parse_stmt(parse_if_statement, AST_IF_STATEMENT);
+    // Others
+    try_parse_stmt(parse_local_decl, AST_LOCAL_DECL);
+    try_parse_stmt(parse_func_call_statement, AST_FUNC_CALL); // do this last because it's pretty awful
+
+    return (StatementIndex){0};
 }
 
 SyntaxIndex parse_attr_statement(Parser *p) {
@@ -176,17 +195,16 @@ SyntaxIndex parse_ident(Parser *p) {
 SyntaxIndex parse_parameter_list_decl(Parser *p) {
     debugf("parse_parameter_list_decl\n");
     if (!peek_token(p, ')')) {
-        SyntaxIndex list = begin_param_list_decl(p->factory);
+        SyntaxIndex list = make_param_list_decl(p->factory);
 
         do {
             SyntaxIndex ident = parse_ident(p);
             Token *colon = accept_token(p, ':');
             SyntaxIndex type = parse_type(p);
-            make_param(p->factory, ident, colon, type);
+            SyntaxIndex param = make_param_decl(p->factory, ident, colon, type);
+            add_param_decl(p->factory, list, param);
         } while (accept_token(p, ','));
 
-        debugf("parse_parameter_list_decl (END)\n");
-        end_param_list_decl(p->factory);
         return list;
     }
     return EMPTY_SYNTAX_INDEX;
@@ -195,14 +213,15 @@ SyntaxIndex parse_parameter_list_decl(Parser *p) {
 SyntaxIndex parse_type(Parser *p) {
     // debugf(VERBOSITY_NORMAL, "parse_type\n");
     SyntaxIndex attr_list = EMPTY_SYNTAX_INDEX;
-    Token *left;
-    if ((left = accept_token(p, '['))) {
-        attr_list = begin_attr_list(p->factory, left);
+    if ((accept_token(p, '['))) {
+        attr_list = make_attr_list(p->factory);
         
-        do { parse_ident(p); } while (accept_token(p, ','));
+        do { 
+            SyntaxIndex attr = parse_ident(p);
+            add_attr(p->factory, attr_list, attr);
+        } while (accept_token(p, ','));
 
         accept_token(p, ']');
-        end_attr_list(p->factory);
     }
 
     SyntaxIndex ident = parse_ident(p);
@@ -212,12 +231,13 @@ SyntaxIndex parse_type(Parser *p) {
 SyntaxIndex parse_block(Parser *p) {
     debugf("parse_block\n");
     if (accept_token(p, '{')) {
-        SyntaxIndex block = begin_block(p->factory);
+        SyntaxIndex block = make_block(p->factory);
         
-        while (parse_statement(p));
-
-        end_block(p->factory);
-
+        StatementIndex s;
+        while ((s = parse_statement(p)).i) {
+            add_statement(p->factory, block, s);
+        }
+        
         if (!accept_token(p, '}')) {
             fprintf(stderr, "Expected }\n");
         }
@@ -231,7 +251,7 @@ SyntaxIndex parse_return_statement(Parser *p) {
     debugf("parse_return_statement\n");
     Token *tok_return;
     if ((tok_return = accept_token(p, TOK_RETURN))) {
-        SyntaxIndex exp = parse_expression(p, EXP_ANY);
+        ExpressionIndex exp = parse_expression(p, EXP_ANY);
         SyntaxIndex smt = make_return_statement(p->factory, tok_return, exp);
 
         if (!accept_token(p, ';')) {
@@ -243,12 +263,12 @@ SyntaxIndex parse_return_statement(Parser *p) {
     return EMPTY_SYNTAX_INDEX;
 }
 
-SyntaxIndex parse_expression(Parser *p, ExpressionPriority priority) {
+ExpressionIndex parse_expression(Parser *p, ExpressionPriority priority) {
     debugf("parse_expression\n");
-    SyntaxIndex left = parse_unary_expression(p);
+    ExpressionIndex left = parse_unary_expression(p);
 
-    SyntaxIndex bin;
-    while ((bin = parse_binary_expression(p, left, priority)))
+    ExpressionIndex bin;
+    while ((bin = parse_binary_expression(p, left, priority)).i)
     {
         left = bin;
     }
@@ -256,10 +276,10 @@ SyntaxIndex parse_expression(Parser *p, ExpressionPriority priority) {
     return left;
 }
 
-SyntaxIndex parse_binary_expression(Parser *p, SyntaxIndex left, ExpressionPriority priority) {
+ExpressionIndex parse_binary_expression(Parser *p, ExpressionIndex left, ExpressionPriority priority) {
     debugf("parse_binary_expression\n");
     if (p->current + 1 >= p->n_tokens) {
-        return EMPTY_SYNTAX_INDEX;
+        return (ExpressionIndex){0};
     }
     Token *op = p->tokens + p->current + 1;
     ExpressionPriority new_priority;
@@ -280,13 +300,13 @@ SyntaxIndex parse_binary_expression(Parser *p, SyntaxIndex left, ExpressionPrior
     // case '|': new_priority = EXP_ADD; break;
     // case '&': new_priority = EXP_ADD; break;
     default:
-        return EMPTY_SYNTAX_INDEX;
+        return (ExpressionIndex){0};
     }
 #pragma GCC diagnostic pop
 
     op = accept_token(p, op->type);
 
-    SyntaxIndex right;
+    ExpressionIndex right;
     if (new_priority < priority) {
         right = parse_unary_expression(p);
     }
@@ -294,29 +314,32 @@ SyntaxIndex parse_binary_expression(Parser *p, SyntaxIndex left, ExpressionPrior
         right = parse_expression(p, new_priority);
     }
 
-    return make_binary_expression(p->factory, left, op, right);
+    return make_expression(
+        p->factory, 
+        make_binary_expression(p->factory, left, op, right),
+        AST_BINARY_EXPRESSION);
 }
 
-SyntaxIndex parse_unary_expression(Parser *p) {
+ExpressionIndex parse_unary_expression(Parser *p) {
     debugf("parse_unary_expression\n");
     bool parse_func = false;
     SyntaxIndex exp;
-    SyntaxIndex exp_index;
-    if ((exp = parse_ident(p))) {
+    ExpressionIndex exp_index;
+    if ((exp = parse_ident(p)).i) {
         parse_func = true;
-        exp_index = make_unary_expression(p->factory, exp, AST_IDENT);
+        exp_index = make_expression(p->factory, exp, AST_IDENT);
     }
-    else if ((exp = parse_literal_expression(p))) {
-        exp_index = exp;
+    else if ((exp = parse_literal_expression(p)).i) {
+        exp_index = make_expression(p->factory, exp, AST_LITERAL);
     }
     else {
-        return EMPTY_SYNTAX_INDEX;
+        return (ExpressionIndex){0};
     }
     
     if (parse_func) {
         SyntaxIndex func;
-        while ((func = parse_func_call_expression(p, exp_index)) != exp_index) {
-            exp_index = func;
+        while ((func = parse_func_call_expression(p, exp_index)).i) {
+            exp_index = make_expression(p->factory, func, AST_FUNC_CALL);
         }
     }
     
@@ -330,7 +353,7 @@ SyntaxIndex parse_local_decl(Parser *p) {
         Token *colon = accept_token(p, ':');
         SyntaxIndex type = EMPTY_SYNTAX_INDEX;
         Token *equals = 0;
-        SyntaxIndex exp = EMPTY_SYNTAX_INDEX;
+        ExpressionIndex exp = (ExpressionIndex){0};
         Token *semicolon = 0;
         if ((equals = accept_token(p, '='))) {// Implicit type with assignment
             exp = parse_expression(p, EXP_ANY);
@@ -353,11 +376,11 @@ SyntaxIndex parse_local_decl(Parser *p) {
     return EMPTY_SYNTAX_INDEX;
 }
 
-SyntaxIndex parse_func_call_expression(Parser *p, SyntaxIndex left_exp) {
+SyntaxIndex parse_func_call_expression(Parser *p, ExpressionIndex left_exp) {
     debugf("parse_func_call_expression\n");
     Token *left;
     if ((left = accept_token(p, '('))) {
-        SyntaxIndex param_list = 0;
+        SyntaxIndex param_list = EMPTY_SYNTAX_INDEX;
         Token *right;
         if (!(right = accept_token(p, ')'))) {
             param_list = make_param_list(p->factory);
@@ -367,10 +390,9 @@ SyntaxIndex parse_func_call_expression(Parser *p, SyntaxIndex left_exp) {
                     parse_expression(p, EXP_ANY));
             } while (accept_token(p, ','));
         }
-        SyntaxIndex x = make_function_call_expression(p->factory, left_exp, left, param_list, right);
-        return x;
+        return make_function_call(p->factory, left_exp, left, param_list, right);
     }
-    return left_exp;
+    return EMPTY_SYNTAX_INDEX;
 }
 
 SyntaxIndex parse_func_call_statement(Parser *p) {
@@ -385,16 +407,21 @@ SyntaxIndex parse_func_call_statement(Parser *p) {
             // damage we're about to do, which, if done, we can skip
             // this lookahead to ;
 
-            SyntaxIndex exp = parse_unary_expression(p);
-            bool parsed = ((TypedIndex*)p->factory->expressions.array)[exp-1].kind == AST_FUNC_CALL;
-            if (!parsed) {
+            ExpressionIndex exp = parse_unary_expression(p);
+            _TypedIndex i = *((_TypedIndex *)get_ast_node(exp, p->factory->expressions));
+            if (i.kind != AST_FUNC_CALL) {
                 fprintf(stderr, "Failed to parse func call\n");
                 // you may now cry
             }
 
-            Token *semi = accept_token(p, ';');
+            if (!accept_token(p, ';')) {
+                fprintf(stderr, "Expected ;\n");
+                return EMPTY_SYNTAX_INDEX;
+                // TODO: I think if you did something like
+                // get_func()() this will get hit...
+            }
 
-            return make_function_call_statement(p->factory, exp, semi);
+            return (SyntaxIndex){i.index.i};
         }
     }
     return EMPTY_SYNTAX_INDEX;
@@ -405,9 +432,9 @@ SyntaxIndex parse_if_statement(Parser *p) {
     Token *if_tok;
     if ((if_tok = accept_token(p, TOK_IF))) {
         Token *left = accept_token(p, '(');
-        SyntaxIndex cond = parse_expression(p, EXP_ANY);
+        ExpressionIndex cond = parse_expression(p, EXP_ANY);
         Token *right = accept_token(p, ')');
-        SyntaxIndex smt = parse_statement(p);
+        StatementIndex smt = parse_statement(p);
         return make_if_statement(p->factory,
             if_tok, left, cond, right, smt);
     }
