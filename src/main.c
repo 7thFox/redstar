@@ -44,7 +44,7 @@ int main(int argc, char ** argv) {
         if (de->d_type == DT_REG) {
 
             sprintf(buff, "%s/%s", args.dir_path, de->d_name);
-            parse_file(buff, parser);
+            if (parse_file(buff, parser)) break;
         }
         else if (de->d_type == DT_DIR) {
             // TODO: recursive
@@ -52,8 +52,9 @@ int main(int argc, char ** argv) {
     }
     closedir(dr);
 
-    print_ast(parser);
-
+    if (!parser->has_error) {
+        print_ast(parser);
+    }
     destroy_parser(parser);
 }
 
@@ -90,8 +91,10 @@ int parse_file(const char* filePath, Parser *parser) {
         return 1;
     }
 
-    LexResult r = lex_file(f);
+    LexResult r = lex_file(f, filePath);
     fclose(f);
+
+    if (r.has_error) return 1;
 
     if (args.printlex) {
         printf("Lexed Tokens:\n");
@@ -107,8 +110,8 @@ int parse_file(const char* filePath, Parser *parser) {
     }
 
     parse_lex(parser, &r, filePath);
-
     free(r.tokens);
     free(r.text);
-    return 0;
+
+    return parser->has_error;
 }

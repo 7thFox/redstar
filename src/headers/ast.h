@@ -109,4 +109,9 @@ typedef struct {
     SyntaxArray param_expressions;// [ExpressionIndex]
 } AstParamList;
 
+typedef struct {
+    SyntaxIndex attr_list;
+    SyntaxIndex ident;// List in future?
+} AstAnnotateStatement;
+
 #endif

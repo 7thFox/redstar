@@ -7,26 +7,26 @@ void *next_array_elem(SyntaxArray *arr);
 StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
 
-#define assert(f, x, kind)                                  \
-    if (!x)                                                 \
-    {                                                       \
-        fprintf(stderr, "%s:%i:%i: Missing %s\n",           \
-                f->strings + f->current_filepath.i,         \
-                f->tokens[*(f->current_token) + 1].p0.line, \
-                f->tokens[*(f->current_token) + 1].p0.col,  \
-                kind);                                      \
-        return EMPTY_SYNTAX_INDEX;                          \
+#define assert(f, x, kind)                                                \
+    if (!x)                                                               \
+    {                                                                     \
+        fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing %s\n", \
+                get_string(f, f->current_filepath),                       \
+                f->tokens[*(f->current_token) + 1].p0.line,               \
+                f->tokens[*(f->current_token) + 1].p0.col,                \
+                kind);                                                    \
+        return EMPTY_SYNTAX_INDEX;                                        \
     }
 
-#define assert_node(f, x, kind)                             \
-    if (!x.i)                                               \
-    {                                                       \
-        fprintf(stderr, "%s:%i:%i: Missing %s\n",           \
-                f->strings + f->current_filepath.i,         \
-                f->tokens[*(f->current_token) + 1].p0.line, \
-                f->tokens[*(f->current_token) + 1].p0.col,  \
-                kind);                                      \
-        return EMPTY_SYNTAX_INDEX;                          \
+#define assert_node(f, x, kind)                                           \
+    if (!x.i)                                                             \
+    {                                                                     \
+        fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing %s\n", \
+                get_string(f, f->current_filepath),                       \
+                f->tokens[*(f->current_token) + 1].p0.line,               \
+                f->tokens[*(f->current_token) + 1].p0.col,                \
+                kind);                                                    \
+        return EMPTY_SYNTAX_INDEX;                                        \
     }
 
 SyntaxFactory *make_astfactory() {
@@ -51,6 +51,7 @@ SyntaxFactory *make_astfactory() {
     f->return_statements = init_array(sizeof(AstReturnStatement), 8);
     f->local_decl_statements = init_array(sizeof(AstLocalDecl), 8);
     f->if_statements = init_array(sizeof(AstIfStatement), 8);
+    f->annotate_statements = init_array(sizeof(AstAnnotateStatement), 8);
 
     f->expressions = init_array(sizeof(_TypedIndex), 32);
     f->binary_expressions = init_array(sizeof(AstBinaryOperationExpression), 8);
@@ -100,6 +101,7 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->return_statements.array);
     free(f->local_decl_statements.array);
     free(f->if_statements.array);
+    free(f->annotate_statements.array);
 
     free(f->expressions.array);
     free(f->binary_expressions.array);
@@ -436,4 +438,15 @@ SyntaxIndex add_param(SyntaxFactory *f, SyntaxIndex list, ExpressionIndex exp) {
         return (SyntaxIndex){l->param_expressions.size};
     }
     return EMPTY_SYNTAX_INDEX;
+}
+
+SyntaxIndex make_annotate_statement(SyntaxFactory *f, SyntaxIndex list, SyntaxIndex ident, Token *semi) {
+    debugf("make_annotate_statement\n");
+    assert_node(f, list, "Attr List");
+    assert_node(f, ident, "Ident");
+    assert(f, semi, ";");
+    AstAnnotateStatement *a = next_array_elem(&f->annotate_statements);
+    a->attr_list = list;
+    a->ident = ident;
+    return (SyntaxIndex){f->annotate_statements.size};
 }

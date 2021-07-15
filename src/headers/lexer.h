@@ -13,8 +13,9 @@ typedef struct {
     char *text;
     Token *tokens;
     token_index n_tokens;
+    bool has_error;
 } LexResult;
 
-LexResult lex_file(FILE *f);
+LexResult lex_file(FILE *f, const char *filepath);
 
 #endif

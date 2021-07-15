@@ -25,6 +25,7 @@ Parser *make_parser() {
     // debugf(VERBOSITY_NORMAL, "make_parser\n");
     Parser *p = malloc(sizeof(Parser));
     p->factory = make_astfactory();
+    p->has_error = false;
     return p;
 }
 
@@ -37,6 +38,7 @@ void destroy_parser(Parser *p) {
 Token *accept_token(Parser *p, TokenType type);
 Token *peek_token(Parser *p, TokenType type);
 Token *npeek_token(Parser *p, TokenType type, token_index n);
+void parse_error(Parser *p, const char *msg);
 
 // Parse Functions
 SyntaxIndex parse_use_statement(Parser *p);
@@ -47,6 +49,7 @@ SyntaxIndex parse_func_decl(Parser *p);
 SyntaxIndex parse_parameter_list_decl(Parser *p);
 SyntaxIndex parse_ident(Parser *p);
 SyntaxIndex parse_type(Parser *p);
+SyntaxIndex parse_attr_list(Parser *p);
 SyntaxIndex parse_block(Parser *p);
 SyntaxIndex parse_return_statement(Parser *p);
 ExpressionIndex parse_expression(Parser *p, ExpressionPriority priority);
@@ -57,6 +60,7 @@ SyntaxIndex parse_func_call_expression(Parser *p, ExpressionIndex left);
 SyntaxIndex parse_func_call_statement(Parser *p);
 SyntaxIndex parse_if_statement(Parser *p);
 SyntaxIndex parse_literal_expression(Parser *p);
+SyntaxIndex parse_annotate_statement(Parser *p);
 
 void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
     // debugf(VERBOSITY_NORMAL, "parse_lex\n");
@@ -84,10 +88,7 @@ void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
     }
 
     if (p->current != p->n_tokens-1) {
-        fprintf(stderr, "%s:%i:%i: Unrecongnized statement\n",
-                p->factory->strings + p->factory->current_filepath.i,
-                p->tokens[p->current + 1].p0.line,
-                p->tokens[p->current + 1].p0.col);
+        parse_error(p, "Unrecognized statement");
     }
 }
 
@@ -121,6 +122,12 @@ Token *npeek_token(Parser *p, TokenType type, token_index n) {
     return 0;
 }
 
+void parse_error(Parser *p, const char *msg) {
+    Cursor c = p->factory->tokens[p->current].p0;
+    fprintf(stderr, "PARSE_ERROR in %s:%i:%i: %s\n", get_string(p->factory, p->factory->current_filepath), c.line, c.col, msg);
+    p->has_error = true;
+}
+
 // Parse Functions
 SyntaxIndex parse_use_statement(Parser *p) {
     debugf("parse_use_statement\n");
@@ -147,6 +154,7 @@ StatementIndex parse_statement(Parser *p) {
     try_parse_stmt(parse_return_statement, AST_RETURN_STATEMENT);
     try_parse_stmt(parse_block, AST_BLOCK);
     try_parse_stmt(parse_if_statement, AST_IF_STATEMENT);
+    try_parse_stmt(parse_annotate_statement, AST_ANNOTATE);
     // Others
     try_parse_stmt(parse_local_decl, AST_LOCAL_DECL);
     try_parse_stmt(parse_func_call_statement, AST_FUNC_CALL); // do this last because it's pretty awful
@@ -212,21 +220,28 @@ SyntaxIndex parse_parameter_list_decl(Parser *p) {
 }
 
 SyntaxIndex parse_type(Parser *p) {
-    // debugf(VERBOSITY_NORMAL, "parse_type\n");
-    SyntaxIndex attr_list = EMPTY_SYNTAX_INDEX;
+    debugf("parse_type\n");
+    SyntaxIndex attr_list = parse_attr_list(p);
+    SyntaxIndex ident = parse_ident(p);
+    return make_type(p->factory, attr_list, ident);
+}
+
+SyntaxIndex parse_attr_list(Parser *p) {
+    debugf("parse_attr_list\n");
     if ((accept_token(p, '['))) {
-        attr_list = make_attr_list(p->factory);
+        SyntaxIndex list = make_attr_list(p->factory);
         
         do { 
             SyntaxIndex attr = parse_ident(p);
-            add_attr(p->factory, attr_list, attr);
+            add_attr(p->factory, list, attr);
         } while (accept_token(p, ','));
 
-        accept_token(p, ']');
+        if (!accept_token(p, ']')) {
+            parse_error(p, "Expected ]");
+        }
+        return list;
     }
-
-    SyntaxIndex ident = parse_ident(p);
-    return make_type(p->factory, attr_list, ident);
+    return EMPTY_SYNTAX_INDEX;
 }
 
 SyntaxIndex parse_block(Parser *p) {
@@ -240,7 +255,7 @@ SyntaxIndex parse_block(Parser *p) {
         }
         
         if (!accept_token(p, '}')) {
-            fprintf(stderr, "Expected }\n");
+            parse_error(p, "Expected }");
         }
 
         return block;
@@ -256,7 +271,7 @@ SyntaxIndex parse_return_statement(Parser *p) {
         SyntaxIndex smt = make_return_statement(p->factory, tok_return, exp);
 
         if (!accept_token(p, ';')) {
-            fprintf(stderr, "Expected ;\n");
+            parse_error(p, "Expected ;");
         }
 
         return smt;
@@ -392,7 +407,7 @@ SyntaxIndex parse_func_call_expression(Parser *p, ExpressionIndex left_exp) {
             } while (accept_token(p, ','));
 
             if (!(right = accept_token(p, ')'))) {
-                fprintf(stderr, "Expected ) or ,\n");
+                parse_error(p, "Expected ) or ,");
             }
         }
         return make_function_call(p->factory, left_exp, left, param_list, right);
@@ -415,12 +430,12 @@ SyntaxIndex parse_func_call_statement(Parser *p) {
             ExpressionIndex exp = parse_unary_expression(p);
             _TypedIndex i = *((_TypedIndex *)get_ast_node(exp, p->factory->expressions));
             if (i.kind != AST_FUNC_CALL) {
-                fprintf(stderr, "Failed to parse func call\n");
+                parse_error(p, "Failed to parse func call");
                 // you may now cry
             }
 
             if (!accept_token(p, ';')) {
-                fprintf(stderr, "Expected ;\n");
+                parse_error(p, "Expected ;");
                 return EMPTY_SYNTAX_INDEX;
                 // TODO: I think if you did something like
                 // get_func()() this will get hit...
@@ -455,3 +470,13 @@ SyntaxIndex parse_literal_expression(Parser *p) {
     return EMPTY_SYNTAX_INDEX;
 }
 
+SyntaxIndex parse_annotate_statement(Parser *p) {
+    debugf("parse_annotate_statement\n");
+    SyntaxIndex list;
+    if ((list = parse_attr_list(p)).i) {
+        SyntaxIndex ident = parse_ident(p);
+        Token *semi = accept_token(p, ';');
+        return make_annotate_statement(p->factory, list, ident, semi);
+    }
+    return EMPTY_SYNTAX_INDEX;
+}

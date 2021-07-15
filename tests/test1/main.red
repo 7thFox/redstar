@@ -11,7 +11,7 @@ func divide(num: int, denom: [NonZero] int) int {// aliased by compiler?
 x := rand_int();
 
 if (x != 0) {
-    x : [NonZero] int;
+    [NonZero] x;
 
     y := divide(3, x);
     z := 3 / x;

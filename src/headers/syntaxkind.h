@@ -14,6 +14,7 @@ typedef enum {
     AST_IF_STATEMENT,
     AST_LITERAL,
     AST_BLOCK,
+    AST_ANNOTATE,
 } SyntaxKind;
 
 #endif

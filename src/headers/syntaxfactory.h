@@ -37,6 +37,7 @@ typedef struct {
     SyntaxArray return_statements;
     SyntaxArray local_decl_statements;
     SyntaxArray if_statements;
+    SyntaxArray annotate_statements;
 
     SyntaxArray expressions;
     SyntaxArray binary_expressions;
@@ -92,5 +93,6 @@ SyntaxIndex make_if_statement(SyntaxFactory *factory, Token *if_tok, Token *left
 SyntaxIndex make_literal_expression(SyntaxFactory *factory, Token *token);
 SyntaxIndex make_param_list(SyntaxFactory *factory);
 SyntaxIndex add_param(SyntaxFactory *factory, SyntaxIndex list, ExpressionIndex exp);
+SyntaxIndex make_annotate_statement(SyntaxFactory *factory, SyntaxIndex list, SyntaxIndex ident, Token *semi);
 
 #endif

@@ -1,4 +1,5 @@
 #include "headers/lexer.h"
+#define TRACE_LEX 0
 #define debugf(...) ;
 // #define debugf(...) printf(__VA_ARGS__)
 
@@ -13,6 +14,9 @@ typedef struct {
     Token *token_buffer;
 
     Cursor current;
+
+    bool       has_error;
+    const char *filepath;
 } Lexer;
 
 // character classes
@@ -36,7 +40,7 @@ bool try_lex_char_literal(Lexer *l, char lit);
 bool eat_inline_whitespace(Lexer *l);
 bool eat_whitespace(Lexer *l);
 bool try_eat_comment(Lexer *l);
-void error(Lexer *l, const char * msg);
+void lex_error(Lexer *l, const char * msg);
 static inline bool required(Lexer *l, bool ret_val, const char * desc);
 
 // states
@@ -56,8 +60,10 @@ bool lex_binary_operation(Lexer *l);
 bool lex_ident_leading_statement(Lexer *l);
 bool lex_if_statement(Lexer *l);
 bool lex_numeric_literal(Lexer *l);
+bool lex_annotate_statement(Lexer *l);
 
-LexResult lex_file(FILE *f) {
+LexResult lex_file(FILE *f, const char *filepath)
+{
     Lexer l;
 
     fseek(f, 0, SEEK_END);
@@ -73,6 +79,8 @@ LexResult lex_file(FILE *f) {
     l.current.ind = -1;
     l.current.line = 1;
     l.current.col = 0;
+    l.has_error = false;
+    l.filepath = filepath;
 
     fread(l.text, sizeof(char), l.text_size, f);
 
@@ -80,7 +88,7 @@ LexResult lex_file(FILE *f) {
     while (lex_use(&l));// move to statemetn?
     while (l.current.ind < l.text_size - 1) {// TODO: might be off by 1 or 2?
         if (!lex_statement(&l)) {
-            error(&l, "Unexpected EOF");
+            lex_error(&l, "Unexpected EOF");
             break;
         }
     };
@@ -89,6 +97,7 @@ LexResult lex_file(FILE *f) {
     r.tokens = l.token_buffer;
     r.n_tokens = l.token_count;
     r.text = l.text;
+    r.has_error = l.has_error;
 
     return r;
 }
@@ -106,7 +115,9 @@ bool read(Lexer *l) {
     if (l->current.ind == l->text_size) return false;
 
     l->c = l->text[l->current.ind];
-    //debugf(VERBOSITY_HIGH, "Read: %c\n", l->c);
+#if TRACE_LEX
+    debugf("Read: %c\n", l->c);
+#endif
 
     if (l->c == '\n') {
         l->current.col = 1;
@@ -239,16 +250,17 @@ bool try_lex_char_literal(Lexer *l, char lit) {
     return false;
 }
 
-void error(Lexer *l, const char * msg) {
+void lex_error(Lexer *l, const char * msg) {
     start_token(l);
     emit_token(l, LEX_ERROR);
-    fprintf(stderr, "ERROR on %i,%i: %s\n", l->current.line, l->current.col, msg);
+    fprintf(stderr, "LEX_ERROR in %s:%i:%i: %s\n", l->filepath, l->current.line, l->current.col, msg);
+    l->has_error = true;
 }
 
 static inline bool required(Lexer *l, bool ret_val, const char * desc) {
     if (!ret_val) {
         char msg[256] = "Expected ";
-        error(l, strcat(msg, desc));
+        lex_error(l, strcat(msg, desc));
     }
     return ret_val;
 }
@@ -279,10 +291,12 @@ bool lex_statement(Lexer *l) {
         lex_func_def(l) ||
         lex_return(l) ||
         lex_if_statement(l) ||
+        lex_annotate_statement(l) ||
         lex_ident_leading_statement(l);
 }
 
 bool lex_attr_def(Lexer *l) {
+    debugf("lex_attr_def\n");
     if (try_lex_reserved_word(l, TOK_ATTR, "attr")) {
         lex_ident(l);
         if (try_lex_char_literal(l, '{')) {
@@ -388,12 +402,14 @@ bool lex_expression(Lexer *l) {
 }
 
 bool lex_left_unary_operation(Lexer *l) {
+    debugf("lex_left_unary_operation\n");
     return
         try_lex_reserved_word(l, TOK_INC, "++") ||
         try_lex_reserved_word(l, TOK_DEC, "--");
 }
 
 bool lex_right_unary_operation(Lexer *l) {
+    debugf("lex_right_unary_operation\n");
     if (try_lex_char_literal(l, '(')) {
         if (lex_expression(l)) {
             while (try_lex_char_literal(l, ',') && required(l, lex_expression(l), "expression"));
@@ -407,6 +423,7 @@ bool lex_right_unary_operation(Lexer *l) {
 }
 
 bool lex_binary_operation(Lexer *l) {
+    debugf("lex_binary_operation\n");
     if (try_lex_char_literal(l, '+') ||
         try_lex_char_literal(l, '-') ||
         try_lex_char_literal(l, '*') ||
@@ -429,6 +446,7 @@ bool lex_binary_operation(Lexer *l) {
 }
 
 bool lex_ident_leading_statement(Lexer *l) {
+    debugf("lex_ident_leading_statement\n");
     if (lex_ident(l)) {
         if (try_lex_char_literal(l, ':')) {
             lex_type_name(l);
@@ -443,7 +461,7 @@ bool lex_ident_leading_statement(Lexer *l) {
             required(l, try_lex_char_literal(l, ')'), ")");
         }
         else {
-            error(l, "Lone ident is not a valid statement");
+            lex_error(l, "Lone ident is not a valid statement");
         }
         required(l, try_lex_char_literal(l, ';'), ";");
         return true;
@@ -452,6 +470,7 @@ bool lex_ident_leading_statement(Lexer *l) {
 }
 
 bool lex_if_statement(Lexer *l) {
+    debugf("lex_if_statement\n");
     if (try_lex_reserved_word(l, TOK_IF, "if")) {
         required(l, try_lex_char_literal(l, '('), "(");
         required(l, lex_expression(l), "expression");
@@ -469,6 +488,7 @@ bool lex_if_statement(Lexer *l) {
 }
 
 bool lex_numeric_literal(Lexer *l) {
+    debugf("lex_numeric_literal\n");
     bool negative = false;
     char p = peek(l);
     if (p == '-' && (uint16_t)(l->current.ind + 2) < l->text_size) {
@@ -487,7 +507,7 @@ bool lex_numeric_literal(Lexer *l) {
         if (peek(l) == 'e') {
             read(l);
             if (peek(l) == '-') read(l);
-            if (!is_numeric(peek(l))) error(l, "Expected numeric value after exponant");
+            if (!is_numeric(peek(l))) lex_error(l, "Expected numeric value after exponent");
             while (is_numeric(peek(l))) read(l);
         }
         emit_token(l, TOK_NUMERIC_LITERAL);
@@ -497,4 +517,17 @@ bool lex_numeric_literal(Lexer *l) {
     return false;
 }
 
-
+bool lex_annotate_statement(Lexer *l) {
+    debugf("lex_annotate_statement\n");
+    if (try_lex_char_literal(l, '[')) {
+        required(l, lex_ident(l), "Attr Name Ident");
+        while (try_lex_char_literal(l, ',')) {
+            required(l, lex_ident(l), "Attr Name Ident");
+        }
+        required(l, try_lex_char_literal(l, ']'), "]");
+        required(l, lex_ident(l), "Variable Name Ident");
+        required(l, try_lex_char_literal(l, ';'), ";");
+        return true;
+    }
+    return false;
+}

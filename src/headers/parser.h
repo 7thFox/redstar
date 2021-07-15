@@ -11,6 +11,8 @@ typedef struct {
     Token       *tokens;
     token_index n_tokens;
     token_index current;
+
+    bool has_error;
 } Parser;
 
 Parser *make_parser();

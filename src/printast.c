@@ -24,6 +24,7 @@ void print_function_call(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_parameter_list(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_if_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_literal_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
 
 void print_ast(Parser *p) {
     for (int i = 0; i < p->factory->compilation_units.size; i++) {
@@ -79,6 +80,9 @@ void print_statement(SyntaxFactory *f, StatementIndex stmt_ind, int indent) {
         break;
     case AST_BLOCK:
         print_block(f, i.index, indent);
+        break;
+    case AST_ANNOTATE:
+        print_annotate_statement(f, i.index, indent);
         break;
     default:
     case AST_COMPILATION_UNIT:
@@ -251,4 +255,20 @@ void print_literal_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
     AstLiteralExpression *lit = get_ast_node(i, f->literal_expressions);
     printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
     printf("LITERAL %i: %s\n", i.i, get_string(f, lit->string_value));
+}
+
+void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    AstAnnotateStatement *a = get_ast_node(i, f->annotate_statements);
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("ANNOTATE %i:\n", i.i);
+
+    printf("%.*s", (indent+1) * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("ATTRS: ");
+    print_attr_list(f, a->attr_list);
+    printf("\n");
+
+    printf("%.*s", (indent+1) * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("IDENT: ");
+    print_ident(f, a->ident);
+    printf("\n");
 }
