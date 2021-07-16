@@ -3,7 +3,7 @@ attr NonZero
 // Binds (bind) and annotations (anno) tie attributes to function signatures
 // including operators. Binds define what is required for a function call to
 // be valid, while annotations simply define rules for the return type if
-// the type annotations match. 
+// the type annotations match.
 
 // Both statements are in the format:
 // ( bind | anno ) func_name attr_list(s) => attr_list
@@ -21,8 +21,6 @@ bind / _, [NonZero]
 // define return types for * and /
 anno * [NonZero], [NonZero] => [NonZero]
 anno / [NonZero], [NonZero] => [NonZero]
-
-// 
 
 // there are some short-hands to avoid specifying each parameter annotation
 // individually: any, all, and none. They work as one would expect and may not be
@@ -44,8 +42,8 @@ func db_search(x: string, y: string) string {}// just pretend this is more than 
 anno multiply all [NonZero] => [NonZero]
 anno multiply any [Even] => [Even]
 anno multiply all [Odd] => [Odd]
-func multiply(x: int   , y: int) int { 
-    return x * y; 
+func multiply(x: int, y: int) int {
+    return x * y;
 }
 
 func foo() {
@@ -56,12 +54,12 @@ func foo() {
     // You can also specify the annotations later via the anno statement:
     y := rand();
     if (y % 2 == 0) {
-        anno y [Even];
+        [Even] y;
         // ...
     }
     else {
         // anno can define multiple attributes to annotate to a variable at once.
-        anno y [Odd, NonZero];
+        [Odd, NonZero] y;
         // ...
     }
 
@@ -70,9 +68,9 @@ func foo() {
     // no annotations on it.
 
     // anno can also specify multiple variables to apply annotations to.
-    anno x, y [NonZero];
+    [NonZero] x, y;
 
     // finally, annotations can be removed as part of an anno statement by
     // pre-fixing the attribute with a -.
-    anno y [-Insecure];
+    [-Insecure] y;
 }

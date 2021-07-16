@@ -40,6 +40,9 @@ Token *peek_token(Parser *p, TokenType type);
 Token *npeek_token(Parser *p, TokenType type, token_index n);
 void parse_error(Parser *p, const char *msg);
 
+Token *accept_unary_operator(Parser *p);
+Token *accept_binary_operator(Parser *p);
+
 // Parse Functions
 SyntaxIndex parse_use_statement(Parser *p);
 SyntaxIndex parse_block(Parser *p);
@@ -61,6 +64,8 @@ SyntaxIndex parse_func_call_statement(Parser *p);
 SyntaxIndex parse_if_statement(Parser *p);
 SyntaxIndex parse_literal_expression(Parser *p);
 SyntaxIndex parse_annotate_statement(Parser *p);
+SyntaxIndex parse_bind_anno_statement(Parser *p);
+bool parse_bind_anno_definition(Parser *p, SyntaxIndex stmt);
 
 void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
     // debugf(VERBOSITY_NORMAL, "parse_lex\n");
@@ -154,7 +159,8 @@ StatementIndex parse_statement(Parser *p) {
     try_parse_stmt(parse_return_statement, AST_RETURN_STATEMENT);
     try_parse_stmt(parse_block, AST_BLOCK);
     try_parse_stmt(parse_if_statement, AST_IF_STATEMENT);
-    try_parse_stmt(parse_annotate_statement, AST_ANNOTATE);
+    try_parse_stmt(parse_bind_anno_statement, AST_BIND_ANNO);
+    try_parse_stmt(parse_annotate_statement, AST_ANNOTATE_LOCAL);
     // Others
     try_parse_stmt(parse_local_decl, AST_LOCAL_DECL);
     try_parse_stmt(parse_func_call_statement, AST_FUNC_CALL); // do this last because it's pretty awful
@@ -230,7 +236,7 @@ SyntaxIndex parse_attr_list(Parser *p) {
     debugf("parse_attr_list\n");
     if ((accept_token(p, '['))) {
         SyntaxIndex list = make_attr_list(p->factory);
-        
+
         do { 
             SyntaxIndex attr = parse_ident(p);
             add_attr(p->factory, list, attr);
@@ -479,4 +485,87 @@ SyntaxIndex parse_annotate_statement(Parser *p) {
         return make_annotate_statement(p->factory, list, ident, semi);
     }
     return EMPTY_SYNTAX_INDEX;
+}
+SyntaxIndex parse_bind_anno_statement(Parser *p) {
+    debugf("parse_bind_anno_statement\n");
+    Token *bind_anno;
+    if ((bind_anno = accept_token(p, TOK_BIND)) ||
+        (bind_anno = accept_token(p, TOK_ANNOTATE)))
+    {
+        SyntaxIndex stmt;
+        Token *op;
+        if ((op = accept_token(p, '*')) ||
+            (op = accept_token(p, '/')) ||
+            (op = accept_token(p, '+')) ||
+            (op = accept_token(p, '-')) ||
+            (op = accept_token(p, TOK_INC)) ||
+            (op = accept_token(p, TOK_DEC)) ||
+            (op = accept_token(p, TOK_EQUALITY)) ||
+            (op = accept_token(p, TOK_GREATER_EQUALS)) ||
+            (op = accept_token(p, TOK_NOT_EQUALS)) ||
+            (op = accept_token(p, TOK_LESS_EQUALS)) ||
+            (op = accept_token(p, '<')) ||
+            (op = accept_token(p, '>')))
+        {
+            if (bind_anno->type == TOK_BIND) {
+                stmt = make_bind_operation_statement(p->factory, bind_anno, op);
+            } else {
+                stmt = make_anno_operation_statement(p->factory, bind_anno, op);
+            }
+        }
+        else
+        {
+            SyntaxIndex ident = parse_ident(p);
+            if (bind_anno->type == TOK_BIND) {
+                stmt = make_bind_function_statement(p->factory, bind_anno, ident);
+            } else {
+                stmt = make_anno_function_statement(p->factory, bind_anno, ident);
+            }
+        }
+
+        Token *arrow;
+        SyntaxIndex list;
+        if (parse_bind_anno_definition(p, stmt)) {
+            while (accept_token(p, ',')) {
+                parse_bind_anno_definition(p, stmt);
+            }
+
+            if ((arrow = accept_token(p, TOK_DOUBLE_ARROW))) {
+                if ((list = parse_attr_list(p)).i) {
+                    add_bind_anno_return(p->factory, stmt, arrow, list);
+                }
+                else if (!accept_token(p, '_')) {
+                    parse_error(p, "Expected attribute list or _");
+                }
+            }
+        }
+        else {
+            if (!(arrow = accept_token(p, TOK_DOUBLE_ARROW))) {
+                parse_error(p, "Expected param attribute lists or =>");
+            }
+            if ((list = parse_attr_list(p)).i) {
+                add_bind_anno_return(p->factory, stmt, arrow, list);
+            }
+            else if (!accept_token(p, '_')) {
+                parse_error(p, "Expected attribute list or _");
+            }
+        }
+        return stmt;
+    }
+    return EMPTY_SYNTAX_INDEX;
+}
+
+bool parse_bind_anno_definition(Parser *p, SyntaxIndex stmt) {
+    debugf("parse_bind_anno_definition\n");
+    Token *u;
+    if ((u = accept_token(p, '_'))) {
+        add_bind_anno_definition_ignore(p->factory, stmt, u);
+        return true;
+    }
+    SyntaxIndex list;
+    if ((list = parse_attr_list(p)).i) {
+        add_bind_anno_definition(p->factory, stmt, list);
+        return true;
+    }
+    return false;
 }

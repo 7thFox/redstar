@@ -27,7 +27,8 @@ typedef struct {
     SyntaxArray param_list_decls;
     SyntaxArray param_decls;
     SyntaxArray attr_lists;
-    SyntaxArray function_calls;
+    SyntaxArray param_lists;
+    SyntaxArray bind_anno_map;
 
     SyntaxArray statements;
     SyntaxArray blocks;
@@ -38,11 +39,15 @@ typedef struct {
     SyntaxArray local_decl_statements;
     SyntaxArray if_statements;
     SyntaxArray annotate_statements;
+    SyntaxArray bind_op_statements;
+    SyntaxArray bind_func_statements;
+    SyntaxArray anno_op_statements;
+    SyntaxArray anno_func_statements;
 
     SyntaxArray expressions;
     SyntaxArray binary_expressions;
     SyntaxArray literal_expressions;
-    SyntaxArray param_lists;
+    SyntaxArray function_calls;
 
     char        *strings;
     StringIndex strings_size;
@@ -94,5 +99,13 @@ SyntaxIndex make_literal_expression(SyntaxFactory *factory, Token *token);
 SyntaxIndex make_param_list(SyntaxFactory *factory);
 SyntaxIndex add_param(SyntaxFactory *factory, SyntaxIndex list, ExpressionIndex exp);
 SyntaxIndex make_annotate_statement(SyntaxFactory *factory, SyntaxIndex list, SyntaxIndex ident, Token *semi);
+
+SyntaxIndex make_bind_operation_statement(SyntaxFactory *factory, Token* bind, Token *op);
+SyntaxIndex make_bind_function_statement(SyntaxFactory *factory, Token* bind, SyntaxIndex ident);
+SyntaxIndex make_anno_operation_statement(SyntaxFactory *factory, Token* anno, Token *op);
+SyntaxIndex make_anno_function_statement(SyntaxFactory *factory, Token* anno, SyntaxIndex ident);
+SyntaxIndex add_bind_anno_definition(SyntaxFactory *factory, SyntaxIndex stmt, SyntaxIndex def);
+SyntaxIndex add_bind_anno_definition_ignore(SyntaxFactory *factory, SyntaxIndex stmt, Token *ignore);
+void add_bind_anno_return(SyntaxFactory *factory, SyntaxIndex stmt, Token *arrow, SyntaxIndex return_def);
 
 #endif

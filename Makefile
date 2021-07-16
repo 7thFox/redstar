@@ -6,3 +6,6 @@ build:
 
 test1: build
 	@bin/redstar -debug -printlex tests/test1
+
+testanno: build
+	@bin/redstar -debug -printlex tests/annotest

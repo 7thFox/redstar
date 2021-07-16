@@ -7,26 +7,26 @@ void *next_array_elem(SyntaxArray *arr);
 StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
 
-#define assert(f, x, kind)                                                \
-    if (!x)                                                               \
-    {                                                                     \
-        fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing %s\n", \
-                get_string(f, f->current_filepath),                       \
-                f->tokens[*(f->current_token) + 1].p0.line,               \
-                f->tokens[*(f->current_token) + 1].p0.col,                \
-                kind);                                                    \
-        return EMPTY_SYNTAX_INDEX;                                        \
+static inline void factory_error(SyntaxFactory *f, const char *missing) {
+    fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing %s\n",
+            get_string(f, f->current_filepath),
+            f->tokens[*(f->current_token) + 1].p0.line,
+            f->tokens[*(f->current_token) + 1].p0.col,
+            missing);
+}
+
+#define assert(f, x, kind)         \
+    if (!x)                        \
+    {                              \
+        factory_error(f, kind);    \
+        return EMPTY_SYNTAX_INDEX; \
     }
 
-#define assert_node(f, x, kind)                                           \
-    if (!x.i)                                                             \
-    {                                                                     \
-        fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing %s\n", \
-                get_string(f, f->current_filepath),                       \
-                f->tokens[*(f->current_token) + 1].p0.line,               \
-                f->tokens[*(f->current_token) + 1].p0.col,                \
-                kind);                                                    \
-        return EMPTY_SYNTAX_INDEX;                                        \
+#define assert_node(f, x, kind)    \
+    if (!x.i)                      \
+    {                              \
+        factory_error(f, kind);    \
+        return EMPTY_SYNTAX_INDEX; \
     }
 
 SyntaxFactory *make_astfactory() {
@@ -41,7 +41,8 @@ SyntaxFactory *make_astfactory() {
     f->param_list_decls = init_array(sizeof(AstParameterListDecl), 8);
     f->param_decls = init_array(sizeof(AstParameterDecl), 16);
     f->attr_lists = init_array(sizeof(AstAttrList), 4);
-    f->function_calls = init_array(sizeof(AstFunctionCall), 8);
+    f->param_lists = init_array(sizeof(AstParamList), 16);
+    f->bind_anno_map = init_array(sizeof(AstBindAnnoMap), 32);
 
     f->statements = init_array(sizeof(_TypedIndex), 32);
     f->blocks = init_array(sizeof(AstBlock), 8);
@@ -52,11 +53,15 @@ SyntaxFactory *make_astfactory() {
     f->local_decl_statements = init_array(sizeof(AstLocalDecl), 8);
     f->if_statements = init_array(sizeof(AstIfStatement), 8);
     f->annotate_statements = init_array(sizeof(AstAnnotateStatement), 8);
+    f->bind_op_statements = init_array(sizeof(AstBindAnnoStatement), 8);
+    f->bind_func_statements = init_array(sizeof(AstBindAnnoStatement), 8);
+    f->anno_op_statements = init_array(sizeof(AstBindAnnoStatement), 8);
+    f->anno_func_statements = init_array(sizeof(AstBindAnnoStatement), 8);
 
     f->expressions = init_array(sizeof(_TypedIndex), 32);
     f->binary_expressions = init_array(sizeof(AstBinaryOperationExpression), 8);
     f->literal_expressions = init_array(sizeof(AstLiteralExpression), 16);
-    f->param_lists = init_array(sizeof(AstParamList), 16);
+    f->function_calls = init_array(sizeof(AstFunctionCall), 8);
 
     f->strings_capacity.i = 2048;
     f->strings_size.i = 0;
@@ -67,34 +72,30 @@ SyntaxFactory *make_astfactory() {
 
 void destroy_astfactory(SyntaxFactory *f) {
     debugf("destroy_astfactory\n");
-    debugf("param_list_decls\n");
     for (int i = 0; i < f->param_list_decls.size; i++) {
         free(((AstParameterListDecl *)f->param_list_decls.array)[i].param_decls.array);
     }
-    debugf("attr_lists\n");
     for (int i = 0; i < f->attr_lists.size; i++) {
         free(((AstAttrList *)f->attr_lists.array)[i].attributes.array);
     }
-    debugf("blocks\n");
     for (int i = 0; i < f->blocks.size; i++) {
         free(((AstBlock *)f->blocks.array)[i].statements.array);
     }
-    debugf("param_lists\n");
     for (int i = 0; i < f->param_lists.size; i++) {
         free(((AstParamList *)f->param_lists.array)[i].param_expressions.array);
     }
-    free(f->param_list_decls.array);
-    free(f->param_lists.array);
-    free(f->attr_lists.array);
-    free(f->blocks.array);
 
     free(f->compilation_units.array);
     free(f->identifiers.array);
     free(f->types.array);
+    free(f->param_list_decls.array);
     free(f->param_decls.array);
-    free(f->function_calls.array);
+    free(f->param_lists.array);
+    free(f->attr_lists.array);
+    free(f->bind_anno_map.array);
 
     free(f->statements.array);
+    free(f->blocks.array);
     free(f->use_statements.array);
     free(f->attribute_declarations.array);
     free(f->func_declarations.array);
@@ -102,10 +103,15 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->local_decl_statements.array);
     free(f->if_statements.array);
     free(f->annotate_statements.array);
+    free(f->bind_op_statements.array);
+    free(f->bind_func_statements.array);
+    free(f->anno_op_statements.array);
+    free(f->anno_func_statements.array);
 
     free(f->expressions.array);
     free(f->binary_expressions.array);
     free(f->literal_expressions.array);
+    free(f->function_calls.array);
 }
 
 SyntaxArray init_array(size_t elem_size, uint16_t cap) {
@@ -449,4 +455,116 @@ SyntaxIndex make_annotate_statement(SyntaxFactory *f, SyntaxIndex list, SyntaxIn
     a->attr_list = list;
     a->ident = ident;
     return (SyntaxIndex){f->annotate_statements.size};
+}
+
+SyntaxIndex make_bind_operation_statement(SyntaxFactory *f, Token* bind, Token *op) {
+    debugf("make_bind_operation_statement\n");
+    assert(f, bind, "bind");
+    assert(f, op, "Operation");
+
+    AstBindAnnoStatement *s = next_array_elem(&f->bind_op_statements);
+    s->parameters = init_array(sizeof(SyntaxIndex), 4);
+    s->op_target = op->type;
+    s->return_def = EMPTY_SYNTAX_INDEX;
+    s->func_target = EMPTY_SYNTAX_INDEX;
+
+    AstBindAnnoMap *m = next_array_elem(&f->bind_anno_map);
+    m->arr = &f->bind_op_statements;
+    m->index = (SyntaxIndex){f->bind_op_statements.size};
+    return (SyntaxIndex){f->bind_anno_map.size};
+}
+
+SyntaxIndex make_bind_function_statement(SyntaxFactory *f, Token* bind, SyntaxIndex ident) {
+    debugf("make_bind_function_statement\n");
+    assert(f, bind, "bind");
+    assert_node(f, ident, "function ident");
+
+    AstBindAnnoStatement *s = next_array_elem(&f->bind_func_statements);
+    s->parameters = init_array(sizeof(SyntaxIndex), 4);
+    s->func_target = ident;
+    s->return_def = EMPTY_SYNTAX_INDEX;
+    s->op_target = 0;
+
+    AstBindAnnoMap *m = next_array_elem(&f->bind_anno_map);
+    m->arr = &f->bind_func_statements;
+    m->index = (SyntaxIndex){f->bind_func_statements.size};
+    return (SyntaxIndex){f->bind_anno_map.size};
+}
+
+SyntaxIndex make_anno_operation_statement(SyntaxFactory *f, Token* anno, Token *op) {
+    debugf("make_bind_operation_statement\n");
+    assert(f, anno, "anno");
+    assert(f, op, "Operation");
+
+    AstBindAnnoStatement *s = next_array_elem(&f->anno_op_statements);
+    s->parameters = init_array(sizeof(SyntaxIndex), 4);
+    s->op_target = op->type;
+    s->return_def = EMPTY_SYNTAX_INDEX;
+    s->func_target = EMPTY_SYNTAX_INDEX;
+
+    AstBindAnnoMap *m = next_array_elem(&f->bind_anno_map);
+    m->arr = &f->anno_op_statements;
+    m->index = (SyntaxIndex){f->anno_op_statements.size};
+    return (SyntaxIndex){f->bind_anno_map.size};
+}
+
+SyntaxIndex make_anno_function_statement(SyntaxFactory *f, Token* anno, SyntaxIndex ident) {
+    debugf("make_bind_operation_statement\n");
+    assert(f, anno, "anno");
+    assert_node(f, ident, "function ident");
+
+    AstBindAnnoStatement *s = next_array_elem(&f->anno_func_statements);
+    s->parameters = init_array(sizeof(SyntaxIndex), 4);
+    s->func_target = ident;
+    s->return_def = EMPTY_SYNTAX_INDEX;
+    s->op_target = 0;
+
+    AstBindAnnoMap *m = next_array_elem(&f->bind_anno_map);
+    m->arr = &f->anno_func_statements;
+    m->index = (SyntaxIndex){f->anno_func_statements.size};
+    return (SyntaxIndex){f->bind_anno_map.size};
+}
+
+SyntaxIndex add_bind_anno_definition(SyntaxFactory *f, SyntaxIndex stmt, SyntaxIndex def) {
+    debugf("add_bind_anno_definition\n");
+    if (stmt.i) {
+        assert_node(f, def, "attribute list");
+
+        AstBindAnnoMap *m = get_ast_node(stmt, f->bind_anno_map);
+        AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
+        SyntaxIndex *i = next_array_elem(&s->parameters);
+        *i = def;
+        return (SyntaxIndex){s->parameters.size};
+    }
+    return EMPTY_SYNTAX_INDEX;
+}
+
+SyntaxIndex add_bind_anno_definition_ignore(SyntaxFactory *f, SyntaxIndex stmt, Token *ignore) {
+    debugf("add_bind_anno_definition_ignore\n");
+    if (stmt.i) {
+        assert(f, ignore, "_");
+
+        AstBindAnnoMap *m = get_ast_node(stmt, f->bind_anno_map);
+        AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
+        SyntaxIndex *i = next_array_elem(&s->parameters);
+        *i = EMPTY_SYNTAX_INDEX;
+        return (SyntaxIndex){s->parameters.size};
+    }
+    return EMPTY_SYNTAX_INDEX;
+}
+
+void add_bind_anno_return(SyntaxFactory *f, SyntaxIndex stmt, Token *arrow, SyntaxIndex return_def){
+    debugf("add_bind_anno_definition_ignore\n");
+    if (stmt.i) {
+        if (!arrow) {
+            factory_error(f, "=>");
+        }
+        if (!return_def.i) {
+            factory_error(f, "attribute list");
+        }
+
+        AstBindAnnoMap *m = get_ast_node(stmt, f->bind_anno_map);
+        AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
+        s->return_def = stmt;
+    }
 }

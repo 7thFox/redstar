@@ -18,8 +18,10 @@ y_fail := divide(3, x);
 z_fail := 3 / x;
 
 if (x != 0) {
-    anno x [NonZero];// add [NonZero] annotation to x
+    [NonZero] x;// add [NonZero] annotation to x
 
-    y := divide(3, x);
+    // could do:
+    // y := divide(3, [NonZero]x);
+    y := divide(333, x);
     z := 3 / x;
 }

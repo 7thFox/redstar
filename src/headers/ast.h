@@ -111,7 +111,19 @@ typedef struct {
 
 typedef struct {
     SyntaxIndex attr_list;
-    SyntaxIndex ident;// List in future?
+    SyntaxIndex ident;// TODO: list
 } AstAnnotateStatement;
+
+typedef struct {
+    SyntaxIndex index;
+    SyntaxArray *arr;
+} AstBindAnnoMap;
+
+typedef struct {
+    SyntaxIndex func_target;
+    TokenType   op_target;
+    SyntaxArray parameters; // [SyntaxIndex?] => AstAttrList
+    SyntaxIndex return_def;
+} AstBindAnnoStatement;
 
 #endif

@@ -51,16 +51,19 @@ bool lex_attr_def(Lexer *l);
 bool lex_func_def(Lexer *l);
 bool lex_param_def(Lexer *l);
 void lex_type_name(Lexer *l);
-void lex_attr(Lexer *l);
+bool lex_attr_list(Lexer *l);
 bool lex_return(Lexer *l);
 bool lex_expression(Lexer *l);
-bool lex_left_unary_operation(Lexer *l);
-bool lex_right_unary_operation(Lexer *l);
+bool lex_unary_operation(Lexer *l);
+bool lex_func_call(Lexer *l);
 bool lex_binary_operation(Lexer *l);
 bool lex_ident_leading_statement(Lexer *l);
 bool lex_if_statement(Lexer *l);
 bool lex_numeric_literal(Lexer *l);
+bool lex_annotate_expression(Lexer *l);
 bool lex_annotate_statement(Lexer *l);
+bool lex_bind_anno_func_statement(Lexer *l);
+bool lex_underscore(Lexer *l);
 
 LexResult lex_file(FILE *f, const char *filepath)
 {
@@ -85,7 +88,7 @@ LexResult lex_file(FILE *f, const char *filepath)
     fread(l.text, sizeof(char), l.text_size, f);
 
     eat_whitespace(&l);
-    while (lex_use(&l));// move to statemetn?
+    while (lex_use(&l));// move to statement?
     while (l.current.ind < l.text_size - 1) {// TODO: might be off by 1 or 2?
         if (!lex_statement(&l)) {
             lex_error(&l, "Unexpected EOF");
@@ -116,7 +119,7 @@ bool read(Lexer *l) {
 
     l->c = l->text[l->current.ind];
 #if TRACE_LEX
-    debugf("Read: %c\n", l->c);
+    printf("Read: %c\n", l->c);
 #endif
 
     if (l->c == '\n') {
@@ -148,6 +151,7 @@ void start_token(Lexer *l) {
 }
 
 void emit_token(Lexer *l, TokenType type) {
+    debugf("--Emit: %i\n", type);
     l->token_buffer[l->token_count].type = type;
     l->token_buffer[l->token_count].p1.line = l->current.line;
     l->token_buffer[l->token_count].p1.col = l->current.col;//  +1;
@@ -218,8 +222,14 @@ bool try_lex_reserved_word(Lexer *l, TokenType type, const char* lit) {
     int i = 0;
     for (; lit[i] != '\0'; i++)
     {
-        // debugf(VERBOSITY_HIGH, "%c == %c ?\n", l->text[l->current.ind + i + 1], lit[i]);
-        if ((uint16_t)(l->current.ind + i) >= l->text_size ||
+        debugf("text[%i] %c (%i) == %c (%i) ?\n",
+            (uint16_t)(l->current.ind + i + 1),
+            l->text[(uint16_t)(l->current.ind + i + 1)],
+            l->text[(uint16_t)(l->current.ind + i + 1)],
+            lit[i],
+            lit[i]);
+
+        if ((uint16_t)(l->current.ind + i + 1) >= l->text_size ||
             l->text[(uint16_t)(l->current.ind + i + 1)] != lit[i])
         {
             return false;
@@ -292,6 +302,7 @@ bool lex_statement(Lexer *l) {
         lex_return(l) ||
         lex_if_statement(l) ||
         lex_annotate_statement(l) ||
+        lex_bind_anno_func_statement(l) ||
         lex_ident_leading_statement(l);
 }
 
@@ -353,18 +364,20 @@ bool lex_param_def(Lexer *l) {
 
 void lex_type_name(Lexer *l) {
     debugf("lex_type_name \n");
-    lex_attr(l);
+    lex_attr_list(l);
     lex_ident(l);
     // TODO: pointers?
     // TODO: arrays?
 }
 
-void lex_attr(Lexer *l) {
+bool lex_attr_list(Lexer *l) {
     debugf("lex_attr \n");
     if (try_lex_char_literal(l, '[')) {
         while (lex_ident(l));
         required(l, try_lex_char_literal(l, ']'), "] or ident");
+        return true;
     }
+    return false;
 }
 
 bool lex_return(Lexer *l) {
@@ -386,11 +399,11 @@ bool lex_expression(Lexer *l) {
         return true;
     }
 
-    while (lex_left_unary_operation(l));
+    while (lex_unary_operation(l));
 
-    if (lex_numeric_literal(l) || 
+    if (lex_numeric_literal(l) ||
         lex_ident(l)) {
-        while (lex_right_unary_operation(l));
+        while (lex_unary_operation(l) || lex_func_call(l));
 
         if (lex_binary_operation(l)) {
             lex_expression(l);
@@ -401,15 +414,15 @@ bool lex_expression(Lexer *l) {
     return false;
 }
 
-bool lex_left_unary_operation(Lexer *l) {
-    debugf("lex_left_unary_operation\n");
+bool lex_unary_operation(Lexer *l) {
+    debugf("lex_unary_operation\n");
     return
         try_lex_reserved_word(l, TOK_INC, "++") ||
         try_lex_reserved_word(l, TOK_DEC, "--");
 }
 
-bool lex_right_unary_operation(Lexer *l) {
-    debugf("lex_right_unary_operation\n");
+bool lex_func_call(Lexer *l) {
+    debugf("lex_func_call\n");
     if (try_lex_char_literal(l, '(')) {
         if (lex_expression(l)) {
             while (try_lex_char_literal(l, ',') && required(l, lex_expression(l), "expression"));
@@ -417,9 +430,8 @@ bool lex_right_unary_operation(Lexer *l) {
         required(l, try_lex_char_literal(l, ')'), ")");
         return true;
     }
-    return
-        try_lex_reserved_word(l, TOK_INC, "++") ||
-        try_lex_reserved_word(l, TOK_DEC, "--");
+
+    return false;
 }
 
 bool lex_binary_operation(Lexer *l) {
@@ -438,7 +450,7 @@ bool lex_binary_operation(Lexer *l) {
         try_lex_reserved_word(l, TOK_GREATER_EQUALS, ">=") ||
         try_lex_reserved_word(l, TOK_NOT_EQUALS, "!=") ||
         try_lex_char_literal(l, '<') ||
-        try_lex_char_literal(l, '>')) 
+        try_lex_char_literal(l, '>'))
     {
         return true;
     }
@@ -518,16 +530,45 @@ bool lex_numeric_literal(Lexer *l) {
 }
 
 bool lex_annotate_statement(Lexer *l) {
-    debugf("lex_annotate_statement\n");
-    if (try_lex_char_literal(l, '[')) {
-        required(l, lex_ident(l), "Attr Name Ident");
-        while (try_lex_char_literal(l, ',')) {
-            required(l, lex_ident(l), "Attr Name Ident");
-        }
-        required(l, try_lex_char_literal(l, ']'), "]");
-        required(l, lex_ident(l), "Variable Name Ident");
+    debugf("lex_anno_statement\n");
+    if (lex_annotate_expression(l)) {
         required(l, try_lex_char_literal(l, ';'), ";");
         return true;
     }
     return false;
+}
+
+bool lex_annotate_expression(Lexer *l) {
+    debugf("lex_anno_expression\n");
+    if (lex_attr_list(l)) {
+        required(l, lex_ident(l), "Variable Name Ident");
+        while (try_lex_char_literal(l, ',')) {
+            required(l, lex_ident(l), "Variable Name Ident");
+        }
+        return true;
+    }
+    return false;
+}
+
+bool lex_bind_anno_func_statement(Lexer *l) {
+    debugf("lex_bind_anno_func_statement\n");
+    if (try_lex_reserved_word(l, TOK_BIND, "bind") ||
+        try_lex_reserved_word(l, TOK_ANNOTATE, "anno"))
+    {
+        required(l, lex_ident(l) || lex_unary_operation(l) || lex_binary_operation(l), "identifier or operation");
+        required(l, lex_attr_list(l) || lex_underscore(l), "one or more attribute lists");
+        while (try_lex_char_literal(l, ',')) {
+            required(l, lex_attr_list(l) || lex_underscore(l), "attribute list or _");
+        }
+        if (try_lex_reserved_word(l, TOK_DOUBLE_ARROW, "=>")) {
+            required(l, lex_attr_list(l) || lex_underscore(l), "attribute list or _");
+        }
+
+        return true;
+    }
+    return false;
+}
+
+bool lex_underscore(Lexer *l) {
+    return try_lex_char_literal(l, '_');
 }

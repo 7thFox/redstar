@@ -25,6 +25,8 @@ void print_parameter_list(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_if_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_literal_expression(SyntaxFactory *f, SyntaxIndex i, int indent);
 void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_bind_anno_statement(SyntaxFactory *f, SyntaxIndex i, int indent);
+void print_operation(SyntaxFactory *f, TokenType op);
 
 void print_ast(Parser *p) {
     for (int i = 0; i < p->factory->compilation_units.size; i++) {
@@ -81,8 +83,11 @@ void print_statement(SyntaxFactory *f, StatementIndex stmt_ind, int indent) {
     case AST_BLOCK:
         print_block(f, i.index, indent);
         break;
-    case AST_ANNOTATE:
+    case AST_ANNOTATE_LOCAL:
         print_annotate_statement(f, i.index, indent);
+        break;
+    case AST_BIND_ANNO:
+        print_bind_anno_statement(f, i.index, indent);
         break;
     default:
     case AST_COMPILATION_UNIT:
@@ -260,7 +265,7 @@ void print_literal_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
 void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
     AstAnnotateStatement *a = get_ast_node(i, f->annotate_statements);
     printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
-    printf("ANNOTATE %i:\n", i.i);
+    printf("ANNO LOCAL %i:\n", i.i);
 
     printf("%.*s", (indent+1) * SPACE_PER_LEVEL, INDENT_CONST);
     printf("ATTRS: ");
@@ -271,4 +276,96 @@ void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
     printf("IDENT: ");
     print_ident(f, a->ident);
     printf("\n");
+}
+
+void print_bind_anno_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
+    AstBindAnnoMap *m = get_ast_node(i, f->bind_anno_map);
+    AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    if (m->arr == &f->bind_func_statements || &f->bind_op_statements){
+        printf("BIND %i (%i): ", i.i, m->index.i);
+    }
+    else {
+        printf("ANNO SIG %i (%i): ", i.i, m->index.i);
+    }
+    if (s->func_target.i) {
+        print_ident(f, s->func_target);
+    }
+    else {
+        print_operation(f, s->op_target);
+    }
+    printf("\n");
+
+    printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("PARAMS:\n");
+    for (int i = 0; i < s->parameters.size; i++){
+        printf("%.*s", (indent + 2) * SPACE_PER_LEVEL, INDENT_CONST);
+        printf("%i: ", i);
+        SyntaxIndex *list_index = get_ast_node(((SyntaxIndex){i + 1}), s->parameters);
+        if (list_index->i) {
+            print_attr_list(f, *list_index);
+        }
+        else {
+            printf("NONE");
+        }
+        printf("\n");
+    }
+
+    printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("RETURN: ");
+    if (s->return_def.i) {
+        print_attr_list(f, s->return_def);
+    }
+    else {
+        printf("NONE");
+    }
+    printf("\n");
+}
+
+void print_operation(SyntaxFactory *f, TokenType op) {
+    if (op <= 255) {
+        printf("%c", op);
+        return;
+    }
+    switch (op)
+    {
+        case TOK_INC:
+            printf("++");
+            break;
+        case TOK_DEC:
+            printf("--");
+            break;
+        case TOK_EQUALITY:
+            printf("==");
+            break;
+        case TOK_NOT_EQUALS:
+            printf("!=");
+            break;
+        case TOK_LESS_EQUALS:
+            printf("<=");
+            break;
+        case TOK_GREATER_EQUALS:
+            printf(">=");
+            break;
+        case TOK_AND:
+            printf("&&");
+            break;
+        case TOK_OR:
+            printf("||");
+            break;
+        case TOK_USE:
+        case TOK_USEPATH:
+        case TOK_ATTR:
+        case TOK_FUNC:
+        case TOK_RETURN:
+        case TOK_IDENT:
+        case TOK_IF:
+        case TOK_NUMERIC_LITERAL:
+        case TOK_BIND:
+        case TOK_ANNOTATE:
+        case TOK_DOUBLE_ARROW:
+        default:
+            fprintf(stderr, "Unexpected operation type %i\n", op);
+            break;
+        }
 }
