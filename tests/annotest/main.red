@@ -29,12 +29,12 @@ attr Even;
 anno * any [Even] => [Even]
 
 attr Odd
-anno * all => [Odd]
+anno * all [Odd] => [Odd]
 
 // _ may be used as a wildcard to specify all functions and operators as a default
 // unless specified for that func/op.
 attr Insecure
-anno _ any => [Insecure]
+anno _ any [Insecure] => [Insecure]
 bind db_search none [Insecure] => _
 func db_search(x: string, y: string) string {}// just pretend this is more than it looks
 

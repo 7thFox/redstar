@@ -1,5 +1,5 @@
 #include "headers/lexer.h"
-#define TRACE_LEX 1
+#define TRACE_LEX 0
 #define debugf(...) ;
 // #define debugf(...) printf(__VA_ARGS__)
 
