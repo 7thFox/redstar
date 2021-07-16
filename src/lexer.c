@@ -1,5 +1,5 @@
 #include "headers/lexer.h"
-#define TRACE_LEX 0
+#define TRACE_LEX 1
 #define debugf(...) ;
 // #define debugf(...) printf(__VA_ARGS__)
 
@@ -89,7 +89,7 @@ LexResult lex_file(FILE *f, const char *filepath)
 
     eat_whitespace(&l);
     while (lex_use(&l));// move to statement?
-    while (l.current.ind < l.text_size - 1) {// TODO: might be off by 1 or 2?
+    while ((uint16_t)(l.current.ind+1) < l.text_size) {
         if (!lex_statement(&l)) {
             lex_error(&l, "Unexpected EOF");
             break;
@@ -296,14 +296,25 @@ bool lex_use(Lexer *l) {
 bool lex_statement(Lexer *l) {
     debugf("lex_statement \n");
 
-    return 
-        lex_attr_def(l) ||
+    if (lex_attr_def(l) ||
         lex_func_def(l) ||
         lex_return(l) ||
         lex_if_statement(l) ||
         lex_annotate_statement(l) ||
         lex_bind_anno_func_statement(l) ||
-        lex_ident_leading_statement(l);
+        lex_ident_leading_statement(l))
+    {
+        return true;
+    }
+    if (peek(l) == ';') {
+        printf("LEX_WARN in %s:%i:%i: Unnecessary ;\n",
+            l->filepath, l->current.line, l->current.col);
+        l->current.col++;
+        l->current.ind++;
+        eat_whitespace(l);
+        return true;
+    }
+    return false;
 }
 
 bool lex_attr_def(Lexer *l) {
