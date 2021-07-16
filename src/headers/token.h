@@ -15,16 +15,20 @@ typedef enum {
     TOK_INC,
     TOK_DEC,
     TOK_IF,
+    TOK_ELSE,
     TOK_EQUALITY,
     TOK_NOT_EQUALS,
     TOK_LESS_EQUALS,
     TOK_GREATER_EQUALS,
-    TOK_AND,
-    TOK_OR,// 270
+    TOK_AND,// 270
+    TOK_OR,
     TOK_NUMERIC_LITERAL,
     TOK_BIND,
     TOK_ANNOTATE,
     TOK_DOUBLE_ARROW,
+    TOK_ANY,
+    TOK_ALL,
+    TOK_NONE,
 
     LEX_ERROR = -99,
 } TokenType;

@@ -48,10 +48,11 @@ bool lex_use(Lexer *l);
 bool lex_statement(Lexer *l);
 bool lex_ident(Lexer *l);
 bool lex_attr_def(Lexer *l);
+bool lex_block(Lexer *l);
 bool lex_func_def(Lexer *l);
 bool lex_param_def(Lexer *l);
 void lex_type_name(Lexer *l);
-bool lex_attr_list(Lexer *l);
+bool lex_attr_list(Lexer *l, bool allow_remove);
 bool lex_return(Lexer *l);
 bool lex_expression(Lexer *l);
 bool lex_unary_operation(Lexer *l);
@@ -59,6 +60,7 @@ bool lex_func_call(Lexer *l);
 bool lex_binary_operation(Lexer *l);
 bool lex_ident_leading_statement(Lexer *l);
 bool lex_if_statement(Lexer *l);
+bool lex_else_statement(Lexer *l);
 bool lex_numeric_literal(Lexer *l);
 bool lex_annotate_expression(Lexer *l);
 bool lex_annotate_statement(Lexer *l);
@@ -299,6 +301,7 @@ bool lex_statement(Lexer *l) {
     if (lex_attr_def(l) ||
         lex_func_def(l) ||
         lex_return(l) ||
+        lex_block(l) ||
         lex_if_statement(l) ||
         lex_annotate_statement(l) ||
         lex_bind_anno_func_statement(l) ||
@@ -312,6 +315,17 @@ bool lex_statement(Lexer *l) {
         l->current.col++;
         l->current.ind++;
         eat_whitespace(l);
+        return true;
+    }
+    return false;
+}
+
+bool lex_block(Lexer *l) {
+    if (try_lex_char_literal(l, '{')) {
+
+        while (lex_statement(l));
+
+        required(l, try_lex_char_literal(l, '}'), "}");
         return true;
     }
     return false;
@@ -375,17 +389,22 @@ bool lex_param_def(Lexer *l) {
 
 void lex_type_name(Lexer *l) {
     debugf("lex_type_name \n");
-    lex_attr_list(l);
+    lex_attr_list(l, false);
     lex_ident(l);
     // TODO: pointers?
     // TODO: arrays?
 }
 
-bool lex_attr_list(Lexer *l) {
+bool lex_attr_list(Lexer *l, bool allow_remove) {
     debugf("lex_attr \n");
     if (try_lex_char_literal(l, '[')) {
-        while (lex_ident(l));
-        required(l, try_lex_char_literal(l, ']'), "] or ident");
+        if (allow_remove) try_lex_char_literal(l, '-');
+        required(l, lex_ident(l), "ident");
+        while (try_lex_char_literal(l, ',')) {
+            if (allow_remove) try_lex_char_literal(l, '-');
+            required(l, lex_ident(l), "ident");
+        }
+        required(l, try_lex_char_literal(l, ']'), "]");
         return true;
     }
     return false;
@@ -498,13 +517,19 @@ bool lex_if_statement(Lexer *l) {
         required(l, try_lex_char_literal(l, '('), "(");
         required(l, lex_expression(l), "expression");
         required(l, try_lex_char_literal(l, ')'), ")");
-        if (try_lex_char_literal(l, '{')) {
-            while (lex_statement(l));
-            required(l, try_lex_char_literal(l, '}'), "}");
-        }
-        else {
-            required(l, lex_statement(l), "statement");
-        }
+
+        required(l, lex_statement(l), "statement");
+
+        lex_else_statement(l);
+        return true;
+    }
+    return false;
+}
+
+bool lex_else_statement(Lexer *l) {
+    debugf("lex_else_statement\n");
+    if (try_lex_reserved_word(l, TOK_ELSE, "else")) {
+        required(l, lex_statement(l), "statement");
         return true;
     }
     return false;
@@ -551,7 +576,7 @@ bool lex_annotate_statement(Lexer *l) {
 
 bool lex_annotate_expression(Lexer *l) {
     debugf("lex_anno_expression\n");
-    if (lex_attr_list(l)) {
+    if (lex_attr_list(l, true)) {
         required(l, lex_ident(l), "Variable Name Ident");
         while (try_lex_char_literal(l, ',')) {
             required(l, lex_ident(l), "Variable Name Ident");
@@ -567,12 +592,22 @@ bool lex_bind_anno_func_statement(Lexer *l) {
         try_lex_reserved_word(l, TOK_ANNOTATE, "anno"))
     {
         required(l, lex_ident(l) || lex_unary_operation(l) || lex_binary_operation(l), "identifier or operation");
-        required(l, lex_attr_list(l) || lex_underscore(l), "one or more attribute lists");
-        while (try_lex_char_literal(l, ',')) {
-            required(l, lex_attr_list(l) || lex_underscore(l), "attribute list or _");
+
+        if (try_lex_reserved_word(l, TOK_ANY, "any") ||
+            try_lex_reserved_word(l, TOK_ALL, "all") ||
+            try_lex_reserved_word(l, TOK_NONE, "none"))
+        {
+            required(l, lex_attr_list(l, false) || lex_underscore(l), "one or more attribute lists");
         }
+        else {
+            required(l, lex_attr_list(l, false) || lex_underscore(l), "one or more attribute lists");
+            while (try_lex_char_literal(l, ',')) {
+                required(l, lex_attr_list(l, false) || lex_underscore(l), "attribute list or _");
+            }
+        }
+
         if (try_lex_reserved_word(l, TOK_DOUBLE_ARROW, "=>")) {
-            required(l, lex_attr_list(l) || lex_underscore(l), "attribute list or _");
+            required(l, lex_attr_list(l, false) || lex_underscore(l), "attribute list or _");
         }
 
         return true;
