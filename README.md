@@ -1,6 +1,6 @@
 # redstar
 
-Experimental language focused on the of developer-defined compile-time constraints.
+Experimental language focused on the idea of developer-defined compile-time constraints.
 
 # example
 
