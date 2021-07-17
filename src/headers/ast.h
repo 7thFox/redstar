@@ -60,8 +60,13 @@ typedef struct {
 } AstType;
 
 typedef struct {
-    SyntaxArray attributes;// [SyntaxIndex] -> AstIdent
+    SyntaxArray attributes;// [SyntaxIndex] -> AstAttrListElem
 } AstAttrList;
+
+typedef struct {
+    SyntaxIndex ident;
+    bool        remove;
+} AstAttrListElem;
 
 typedef struct {
     StringIndex name;

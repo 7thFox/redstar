@@ -27,6 +27,7 @@ typedef struct {
     SyntaxArray param_list_decls;
     SyntaxArray param_decls;
     SyntaxArray attr_lists;
+    SyntaxArray attr_lists_elems;
     SyntaxArray param_lists;
     SyntaxArray bind_anno_map;
     SyntaxArray bind_anno_ordinals;
@@ -96,6 +97,7 @@ SyntaxIndex make_param_list_decl(SyntaxFactory *factory);
 SyntaxIndex make_param_decl(SyntaxFactory *factory, SyntaxIndex ident, Token *colon, SyntaxIndex type);
 SyntaxIndex make_type(SyntaxFactory *factory, SyntaxIndex attr_list_opt, SyntaxIndex ident);
 SyntaxIndex make_attr_list(SyntaxFactory *factory);
+SyntaxIndex make_attr_list_elem(SyntaxFactory *factory, Token *remove_opt, SyntaxIndex ident);
 SyntaxIndex make_binary_expression(SyntaxFactory *factory, ExpressionIndex left, Token *op, ExpressionIndex right);
 SyntaxIndex make_return_statement(SyntaxFactory *factory, Token *return_token, ExpressionIndex expression);
 SyntaxIndex make_local_decl(SyntaxFactory *factory, SyntaxIndex ident, Token *colon, SyntaxIndex type_opt, Token *equals_opt, ExpressionIndex expresion_opt, Token *semicolon);
@@ -115,7 +117,7 @@ SyntaxIndex make_bind_anno_statement(SyntaxFactory *factory,
 // add_
 SyntaxIndex add_statement(SyntaxFactory *factory, SyntaxIndex block, StatementIndex stmt);
 SyntaxIndex add_param(SyntaxFactory *factory, SyntaxIndex list, ExpressionIndex exp);
-SyntaxIndex add_attr(SyntaxFactory *factory, SyntaxIndex attr_list, SyntaxIndex attr_ident);
+SyntaxIndex add_attr(SyntaxFactory *factory, SyntaxIndex attr_list, SyntaxIndex attr_elem);
 SyntaxIndex add_param_decl(SyntaxFactory *factory, SyntaxIndex param_list, SyntaxIndex param_decl);
 SyntaxIndex add_bind_anno_ordinal(SyntaxFactory *factory, SyntaxIndex ordinal_list, SyntaxIndex attr_list_opt);
 

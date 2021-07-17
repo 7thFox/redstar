@@ -1,15 +1,19 @@
 #include "headers/parser.h"
-#define debugf(...) ;
-// #define debugf(...) printf(__VA_ARGS__)
+#define TRACE_PARSE 0
+// #define debugf(...) ;
+#define debugf(...) printf("  "); printf(__VA_ARGS__)
 
-typedef enum {
+typedef enum
+{
 
     // just_parsed_priority < previously_parse_priority : don't recurse
     // or
     // previously_parse_priority >= just_parsed_priority : recurse
 
-    EXP_EQUALS = 500,
-    EXP_NOT_EQUALS = 500,
+    EXP_EQUALS = 900,
+    EXP_NOT_EQUALS = 900,
+
+    EXP_MOD = 600,
 
     EXP_DIVIDE = 500,
     EXP_MULTIPLY = 500,
@@ -19,7 +23,8 @@ typedef enum {
 
     EXP_ANY = -9999,
 
-} ExpressionPriority;
+}
+ExpressionPriority;
 
 Parser *make_parser() {
     // debugf(VERBOSITY_NORMAL, "make_parser\n");
@@ -52,7 +57,7 @@ SyntaxIndex parse_func_decl(Parser *p);
 SyntaxIndex parse_parameter_list_decl(Parser *p);
 SyntaxIndex parse_ident(Parser *p);
 SyntaxIndex parse_type(Parser *p);
-SyntaxIndex parse_attr_list(Parser *p);
+SyntaxIndex parse_attr_list(Parser *p, bool allow_remove);
 SyntaxIndex parse_block(Parser *p);
 SyntaxIndex parse_return_statement(Parser *p);
 ExpressionIndex parse_expression(Parser *p, ExpressionPriority priority);
@@ -61,6 +66,7 @@ ExpressionIndex parse_binary_expression(Parser *p, ExpressionIndex left, Express
 SyntaxIndex parse_local_decl(Parser *p);
 SyntaxIndex parse_func_call_expression(Parser *p, ExpressionIndex left);
 SyntaxIndex parse_func_call_statement(Parser *p);
+SyntaxIndex parse_if_statement(Parser *p);
 SyntaxIndex parse_if_statement(Parser *p);
 SyntaxIndex parse_literal_expression(Parser *p);
 SyntaxIndex parse_annotate_statement(Parser *p);
@@ -99,6 +105,11 @@ void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
 // Helper Functions
 Token* accept_token(Parser *p, TokenType type) {
     token_index next = p->current + 1;
+#if TRACE_PARSE
+    Cursor c = p->factory->tokens[next].p0;
+    printf("    TRACE %s:%i:%i\n",
+        get_string(p->factory, p->factory->current_filepath), c.line, c.col);
+#endif
     debugf("accept_token %i (%c) = %i (%c)?\n", (p->tokens[next].type), (p->tokens[next].type), type, type);
     Token *tok;
     if (next < p->n_tokens &&
@@ -189,7 +200,10 @@ SyntaxIndex parse_func_decl(Parser *p) {
         Token *left = accept_token(p, '(');
         SyntaxIndex param_list = parse_parameter_list_decl(p);
         Token *right = accept_token(p, ')');
-        SyntaxIndex return_type = parse_type(p);
+        SyntaxIndex return_type = EMPTY_SYNTAX_INDEX;
+        if (!peek_token(p, '{')) {
+            return_type = parse_type(p);
+        }
         SyntaxIndex block = parse_block(p);
 
         debugf("parse_func_decl (END)\n");
@@ -227,19 +241,24 @@ SyntaxIndex parse_parameter_list_decl(Parser *p) {
 
 SyntaxIndex parse_type(Parser *p) {
     debugf("parse_type\n");
-    SyntaxIndex attr_list = parse_attr_list(p);
+    SyntaxIndex attr_list = parse_attr_list(p, false);
     SyntaxIndex ident = parse_ident(p);
     return make_type(p->factory, attr_list, ident);
 }
 
-SyntaxIndex parse_attr_list(Parser *p) {
+SyntaxIndex parse_attr_list(Parser *p, bool allow_remove) {
     debugf("parse_attr_list\n");
     if ((accept_token(p, '['))) {
         SyntaxIndex list = make_attr_list(p->factory);
 
-        do { 
+        do {
+            Token *remove = 0;
+            if (allow_remove) {
+                remove = accept_token(p, '-');
+            }
             SyntaxIndex attr = parse_ident(p);
-            add_attr(p->factory, list, attr);
+            SyntaxIndex elem = make_attr_list_elem(p->factory, remove, attr);
+            add_attr(p->factory, list, elem);
         } while (accept_token(p, ','));
 
         if (!accept_token(p, ']')) {
@@ -316,7 +335,7 @@ ExpressionIndex parse_binary_expression(Parser *p, ExpressionIndex left, Express
 
     case TOK_NOT_EQUALS: new_priority = EXP_EQUALS; break;
     case TOK_EQUALITY:   new_priority = EXP_NOT_EQUALS; break;
-    // case '%': new_priority = EXP_ADD; break;
+    case '%': new_priority = EXP_MOD; break;
     // case TOK_OR: new_priority = EXP_ADD; break;
     // case TOK_AND: new_priority = EXP_ADD; break;
     // case '|': new_priority = EXP_ADD; break;
@@ -479,13 +498,14 @@ SyntaxIndex parse_literal_expression(Parser *p) {
 SyntaxIndex parse_annotate_statement(Parser *p) {
     debugf("parse_annotate_statement\n");
     SyntaxIndex list;
-    if ((list = parse_attr_list(p)).i) {
+    if ((list = parse_attr_list(p, true)).i) {
         SyntaxIndex ident = parse_ident(p);
         Token *semi = accept_token(p, ';');
         return make_annotate_statement(p->factory, list, ident, semi);
     }
     return EMPTY_SYNTAX_INDEX;
 }
+
 SyntaxIndex parse_bind_anno_statement(Parser *p) {
     debugf("parse_bind_anno_statement\n");
 
@@ -493,7 +513,7 @@ SyntaxIndex parse_bind_anno_statement(Parser *p) {
 
     Token *bind_anno = 0;
     if ((bind_anno = accept_token(p, TOK_BIND))) kind |= BAS_BIND;
-    else if ((bind_anno = accept_token(p, TOK_ANNOTATE))) kind |= BAS_BIND;
+    else if ((bind_anno = accept_token(p, TOK_ANNOTATE))) kind |= BAS_ANNO;
     else return EMPTY_SYNTAX_INDEX;
 
     SyntaxIndex func = EMPTY_SYNTAX_INDEX;
@@ -526,7 +546,7 @@ SyntaxIndex parse_bind_anno_statement(Parser *p) {
         (wildcard_kind = accept_token(p, TOK_NONE)))
     {
         kind |= BAS_DEFS_WILD;
-        wildcard_list = parse_attr_list(p);
+        wildcard_list = parse_attr_list(p, true);
     }
     else
     {
@@ -536,23 +556,26 @@ SyntaxIndex parse_bind_anno_statement(Parser *p) {
         kind |= BAS_DEFS_ORDINAL;
         ordinal_list = make_bind_anno_ordinals(p->factory);
         SyntaxIndex list;
-        while (true) {
+        do {
             if (accept_token(p, '_')) {
                 add_bind_anno_ordinal(p->factory, ordinal_list, EMPTY_SYNTAX_INDEX);
             }
-            else if ((list = parse_attr_list(p)).i) {
+            else if ((list = parse_attr_list(p, true)).i) {
                 add_bind_anno_ordinal(p->factory, ordinal_list, list);
             }
-            else break;
-        }
+        } while (accept_token(p, ','));
     }
 
     Token *arrow = 0;
     SyntaxIndex arrow_list = EMPTY_SYNTAX_INDEX;
-    if ((arrow = accept_token(p, TOK_DOUBLE_ARROW)) &&
-        (arrow_list = parse_attr_list(p)).i)
+    if ((arrow = accept_token(p, TOK_DOUBLE_ARROW)))
     {
-        kind |= BAS_RETURN;
+        if ((arrow_list = parse_attr_list(p, false)).i) {
+            kind |= BAS_RETURN;
+        }
+        else if (!accept_token(p, '_')) {
+            parse_error(p, "Expected attr list or _");
+        }
     }
 
     return make_bind_anno_statement(p->factory, kind, bind_anno,

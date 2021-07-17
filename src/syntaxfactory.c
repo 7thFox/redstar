@@ -1,6 +1,6 @@
 #include "headers/syntaxfactory.h"
-#define debugf(...) ;
-// #define debugf(...) printf(__VA_ARGS__)
+// #define debugf(...) ;
+#define debugf(...) printf("=>"); printf(__VA_ARGS__)
 
 SyntaxArray init_array(size_t elem_size, uint16_t cap);
 void *next_array_elem(SyntaxArray *arr);
@@ -51,6 +51,7 @@ SyntaxFactory *make_astfactory() {
     f->param_list_decls = init_array(sizeof(AstParameterListDecl), 8);
     f->param_decls = init_array(sizeof(AstParameterDecl), 16);
     f->attr_lists = init_array(sizeof(AstAttrList), 4);
+    f->attr_lists_elems = init_array(sizeof(AstAttrListElem), 16);
     f->param_lists = init_array(sizeof(AstParamList), 16);
     f->bind_anno_map = init_array(sizeof(AstBindAnnoMap), 32);
     f->bind_anno_ordinals = init_array(sizeof(AstBindAnnoOrdinals), 32);
@@ -118,6 +119,7 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->param_decls.array);
     free(f->param_lists.array);
     free(f->attr_lists.array);
+    free(f->attr_lists_elems.array);
     free(f->bind_anno_map.array);
     free(f->bind_anno_ordinals.array);
 
@@ -216,7 +218,7 @@ StringIndex copy_token_string(SyntaxFactory *f, Token *tok) {
 }
 
 StatementIndex make_statement(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k) {
-    debugf("FFFFFFmake_statement %i = %i\n", f->statements.size + 1, i.i);
+    debugf("make_statement %i = %i\n", f->statements.size + 1, i.i);
     _TypedIndex *index = next_array_elem(&f->statements);
     index->index.i = i.i;
     index->kind = k;
@@ -244,12 +246,12 @@ SyntaxIndex make_compilation_unit(SyntaxFactory *f, LexResult *lex, const char *
 }
 
 SyntaxIndex make_block(SyntaxFactory *f) {
+    debugf("make_block\n");
     AstBlock *block = next_array_elem(&f->blocks);
     block->statements = init_array(sizeof(StatementIndex), 16);
-    
-    debugf("make_block\n");
     return (SyntaxIndex){f->blocks.size};
 }
+
 SyntaxIndex add_statement(SyntaxFactory *f, SyntaxIndex block, StatementIndex stmt) {
     if (block.i && stmt.i) {
         AstBlock *b = get_ast_node(block, f->blocks);
@@ -270,10 +272,10 @@ SyntaxIndex make_use_statement(SyntaxFactory *f, Token *use_tok, Token *name) {
 }
 
 SyntaxIndex make_ident(SyntaxFactory *f, Token *name) {
+    debugf("make_ident\n");
     assert(f, name, "Ident Name");
     AstIdent *ident = next_array_elem(&f->identifiers);
     ident->name = copy_token_string(f, name);
-    debugf("make_ident %i\n", f->identifiers.size);
     return (SyntaxIndex){f->identifiers.size};
 }
 
@@ -312,6 +314,7 @@ SyntaxIndex make_func_decl(SyntaxFactory *f,
 }
 
 SyntaxIndex make_param_list_decl(SyntaxFactory *f) {
+    debugf("make_param_list_decl\n");
     AstParameterListDecl *list = next_array_elem(&f->param_list_decls);
     list->param_decls = init_array(sizeof(SyntaxIndex), 4);
 
@@ -329,6 +332,7 @@ SyntaxIndex add_param_decl(SyntaxFactory *f, SyntaxIndex param_list, SyntaxIndex
 }
 
 SyntaxIndex make_param_decl(SyntaxFactory *f, SyntaxIndex ident, Token *colon, SyntaxIndex type) {
+    debugf("make_param_decl\n");
     assert_node(f, ident, "Ident");
     assert(f, colon, ":");
     assert_node(f, type, "Type");
@@ -341,6 +345,7 @@ SyntaxIndex make_param_decl(SyntaxFactory *f, SyntaxIndex ident, Token *colon, S
 }
 
 SyntaxIndex make_type(SyntaxFactory *f, SyntaxIndex attr_list_opt, SyntaxIndex ident) {
+    debugf("make_type\n");
     assert_node(f, ident, "Type Ident");
 
     AstType *type = next_array_elem(&f->types);
@@ -351,22 +356,33 @@ SyntaxIndex make_type(SyntaxFactory *f, SyntaxIndex attr_list_opt, SyntaxIndex i
 }
 
 SyntaxIndex make_attr_list(SyntaxFactory *f) {
+    debugf("make_attr_list\n");
     AstAttrList *list = next_array_elem(&f->attr_lists);
-    list->attributes = init_array(sizeof(SyntaxIndex), 1);
+    list->attributes = init_array(sizeof(SyntaxIndex), 4);
     return (SyntaxIndex){f->attr_lists.size};
 }
 
-SyntaxIndex add_attr(SyntaxFactory *f, SyntaxIndex attr_list, SyntaxIndex attr_ident) {
-    if (attr_list.i && attr_ident.i) {
+SyntaxIndex make_attr_list_elem(SyntaxFactory *f, Token *remove_opt, SyntaxIndex ident) {
+    debugf("make_attr_list_elem\n");
+    assert_node(f, ident, "attribute ident");
+    AstAttrListElem *e = next_array_elem(&f->attr_lists_elems);
+    e->ident = ident;
+    e->remove = remove_opt != 0;
+    return (SyntaxIndex){f->attr_lists_elems.size};
+}
+
+SyntaxIndex add_attr(SyntaxFactory *f, SyntaxIndex attr_list, SyntaxIndex elem) {
+    if (attr_list.i && elem.i) {
         AstAttrList *l = get_ast_node(attr_list, f->attr_lists);
         SyntaxIndex *i = next_array_elem(&l->attributes);
-        i->i = attr_ident.i;
+        i->i = elem.i;
         return (SyntaxIndex){l->attributes.size};
     }
     return EMPTY_SYNTAX_INDEX;
 }
 
 SyntaxIndex make_binary_expression(SyntaxFactory *f, ExpressionIndex left, Token *op, ExpressionIndex right) {
+    debugf("make_binary_expression\n");
     assert_node(f, left, "Left Binary Expression Value");
     assert(f, op, "Binary Expression Operation");
     assert_node(f, right, "Right Binary Expression Value");
@@ -400,6 +416,7 @@ SyntaxIndex make_binary_expression(SyntaxFactory *f, ExpressionIndex left, Token
 }
 
 SyntaxIndex make_return_statement(SyntaxFactory *f, Token *return_token, ExpressionIndex expression) {
+    debugf("make_return_statement\n");
     assert(f, return_token, "Return Keyword");
     assert_node(f, expression, "Expression");
 
@@ -503,6 +520,7 @@ SyntaxIndex make_bind_anno_statement(SyntaxFactory *f,
     Token *wildcard_kind, SyntaxIndex wildcard_def, SyntaxIndex ordinals,
     Token *arrow_opt, SyntaxIndex return_def_opt)
 {
+    debugf("make_bind_anno_statement\n");
     SyntaxArray *arr;
     switch (kind)
     {
@@ -647,6 +665,7 @@ SyntaxIndex make_bind_anno_statement(SyntaxFactory *f,
 }
 
 SyntaxIndex make_bind_anno_ordinals(SyntaxFactory *f) {
+    debugf("make_bind_anno_ordinals\n");
     AstBindAnnoOrdinals *o = next_array_elem(&f->bind_anno_ordinals);
     o->ordinals = init_array(sizeof(SyntaxIndex), 8);
     return (SyntaxIndex){f->bind_anno_ordinals.size};
@@ -656,7 +675,7 @@ SyntaxIndex add_bind_anno_ordinal(SyntaxFactory *f, SyntaxIndex ordinal_list, Sy
     if (ordinal_list.i) {
         AstBindAnnoOrdinals *o = get_ast_node(ordinal_list, f->bind_anno_ordinals);
         SyntaxIndex *i = next_array_elem(&o->ordinals);
-        *i = attr_list_opt;
+        i->i = attr_list_opt.i;
         return (SyntaxIndex){o->ordinals.size};
     }
     return EMPTY_SYNTAX_INDEX;
