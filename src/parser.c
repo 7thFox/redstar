@@ -3,11 +3,11 @@
 // #define debugf(...) printf(__VA_ARGS__)
 
 typedef enum {
-    
+
     // just_parsed_priority < previously_parse_priority : don't recurse
     // or
     // previously_parse_priority >= just_parsed_priority : recurse
-    
+
     EXP_EQUALS = 500,
     EXP_NOT_EQUALS = 500,
 
@@ -65,7 +65,6 @@ SyntaxIndex parse_if_statement(Parser *p);
 SyntaxIndex parse_literal_expression(Parser *p);
 SyntaxIndex parse_annotate_statement(Parser *p);
 SyntaxIndex parse_bind_anno_statement(Parser *p);
-bool parse_bind_anno_definition(Parser *p, SyntaxIndex stmt);
 
 void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
     // debugf(VERBOSITY_NORMAL, "parse_lex\n");
@@ -489,84 +488,75 @@ SyntaxIndex parse_annotate_statement(Parser *p) {
 }
 SyntaxIndex parse_bind_anno_statement(Parser *p) {
     debugf("parse_bind_anno_statement\n");
-    Token *bind_anno;
-    if ((bind_anno = accept_token(p, TOK_BIND)) ||
-        (bind_anno = accept_token(p, TOK_ANNOTATE)))
+
+    BindAnnoStatementKind kind = 0;
+
+    Token *bind_anno = 0;
+    if ((bind_anno = accept_token(p, TOK_BIND))) kind |= BAS_BIND;
+    else if ((bind_anno = accept_token(p, TOK_ANNOTATE))) kind |= BAS_BIND;
+    else return EMPTY_SYNTAX_INDEX;
+
+    SyntaxIndex func = EMPTY_SYNTAX_INDEX;
+    Token *wildcard_target = 0;
+    Token *op = 0;
+    if ((wildcard_target = accept_token(p, '_'))) kind |= BAS_TARGET_WILD;
+    else if ((func = parse_ident(p)).i) kind |= BAS_TARGET_FUNC;
+    else if ((op = accept_token(p, '*')) ||
+             (op = accept_token(p, '/')) ||
+             (op = accept_token(p, '+')) ||
+             (op = accept_token(p, '-')) ||
+             (op = accept_token(p, TOK_INC)) ||
+             (op = accept_token(p, TOK_DEC)) ||
+             (op = accept_token(p, TOK_EQUALITY)) ||
+             (op = accept_token(p, TOK_GREATER_EQUALS)) ||
+             (op = accept_token(p, TOK_NOT_EQUALS)) ||
+             (op = accept_token(p, TOK_LESS_EQUALS)) ||
+             (op = accept_token(p, '<')) ||
+             (op = accept_token(p, '>')))
     {
-        SyntaxIndex stmt;
-        Token *op;
-        if ((op = accept_token(p, '*')) ||
-            (op = accept_token(p, '/')) ||
-            (op = accept_token(p, '+')) ||
-            (op = accept_token(p, '-')) ||
-            (op = accept_token(p, TOK_INC)) ||
-            (op = accept_token(p, TOK_DEC)) ||
-            (op = accept_token(p, TOK_EQUALITY)) ||
-            (op = accept_token(p, TOK_GREATER_EQUALS)) ||
-            (op = accept_token(p, TOK_NOT_EQUALS)) ||
-            (op = accept_token(p, TOK_LESS_EQUALS)) ||
-            (op = accept_token(p, '<')) ||
-            (op = accept_token(p, '>')))
-        {
-            if (bind_anno->type == TOK_BIND) {
-                stmt = make_bind_operation_statement(p->factory, bind_anno, op);
-            } else {
-                stmt = make_anno_operation_statement(p->factory, bind_anno, op);
-            }
-        }
-        else
-        {
-            SyntaxIndex ident = parse_ident(p);
-            if (bind_anno->type == TOK_BIND) {
-                stmt = make_bind_function_statement(p->factory, bind_anno, ident);
-            } else {
-                stmt = make_anno_function_statement(p->factory, bind_anno, ident);
-            }
-        }
+        kind |= BAS_TARGET_OP;
+    }
+    else parse_error(p, "Expected func name, op, or _");
 
-        Token *arrow;
+    Token *wildcard_kind = 0;
+    SyntaxIndex wildcard_list = EMPTY_SYNTAX_INDEX;
+    SyntaxIndex ordinal_list = EMPTY_SYNTAX_INDEX;
+    if ((wildcard_kind = accept_token(p, TOK_ANY)) ||
+        (wildcard_kind = accept_token(p, TOK_ALL)) ||
+        (wildcard_kind = accept_token(p, TOK_NONE)))
+    {
+        kind |= BAS_DEFS_WILD;
+        wildcard_list = parse_attr_list(p);
+    }
+    else
+    {
+        if ((kind & BAS_TARGET_WILD) == BAS_TARGET_WILD) {
+            parse_error(p, "Cannot define ordinal attributes for wildcard bind/anno target");
+        }
+        kind |= BAS_DEFS_ORDINAL;
+        ordinal_list = make_bind_anno_ordinals(p->factory);
         SyntaxIndex list;
-        if (parse_bind_anno_definition(p, stmt)) {
-            while (accept_token(p, ',')) {
-                parse_bind_anno_definition(p, stmt);
+        while (true) {
+            if (accept_token(p, '_')) {
+                add_bind_anno_ordinal(p->factory, ordinal_list, EMPTY_SYNTAX_INDEX);
             }
-
-            if ((arrow = accept_token(p, TOK_DOUBLE_ARROW))) {
-                if ((list = parse_attr_list(p)).i) {
-                    add_bind_anno_return(p->factory, stmt, arrow, list);
-                }
-                else if (!accept_token(p, '_')) {
-                    parse_error(p, "Expected attribute list or _");
-                }
+            else if ((list = parse_attr_list(p)).i) {
+                add_bind_anno_ordinal(p->factory, ordinal_list, list);
             }
+            else break;
         }
-        else {
-            if (!(arrow = accept_token(p, TOK_DOUBLE_ARROW))) {
-                parse_error(p, "Expected param attribute lists or =>");
-            }
-            if ((list = parse_attr_list(p)).i) {
-                add_bind_anno_return(p->factory, stmt, arrow, list);
-            }
-            else if (!accept_token(p, '_')) {
-                parse_error(p, "Expected attribute list or _");
-            }
-        }
-        return stmt;
     }
-    return EMPTY_SYNTAX_INDEX;
-}
 
-bool parse_bind_anno_definition(Parser *p, SyntaxIndex stmt) {
-    debugf("parse_bind_anno_definition\n");
-    Token *u;
-    if ((u = accept_token(p, '_'))) {
-        add_bind_anno_definition_ignore(p->factory, stmt, u);
-        return true;
+    Token *arrow = 0;
+    SyntaxIndex arrow_list = EMPTY_SYNTAX_INDEX;
+    if ((arrow = accept_token(p, TOK_DOUBLE_ARROW)) &&
+        (arrow_list = parse_attr_list(p)).i)
+    {
+        kind |= BAS_RETURN;
     }
-    SyntaxIndex list;
-    if ((list = parse_attr_list(p)).i) {
-        add_bind_anno_definition(p->factory, stmt, list);
-        return true;
-    }
-    return false;
+
+    return make_bind_anno_statement(p->factory, kind, bind_anno,
+        func, op, wildcard_target,
+        wildcard_kind, wildcard_list, ordinal_list,
+        arrow, arrow_list);
 }

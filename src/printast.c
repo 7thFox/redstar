@@ -279,47 +279,47 @@ void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
 }
 
 void print_bind_anno_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
-    AstBindAnnoMap *m = get_ast_node(i, f->bind_anno_map);
-    AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
-    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
-    if (m->arr == &f->bind_func_statements || &f->bind_op_statements){
-        printf("BIND %i (%i): ", i.i, m->index.i);
-    }
-    else {
-        printf("ANNO SIG %i (%i): ", i.i, m->index.i);
-    }
-    if (s->func_target.i) {
-        print_ident(f, s->func_target);
-    }
-    else {
-        print_operation(f, s->op_target);
-    }
-    printf("\n");
+    // AstBindAnnoMap *m = get_ast_node(i, f->bind_anno_map);
+    // AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
+    // printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    // if (m->arr == &f->bind_func_statements || &f->bind_op_statements){
+    //     printf("BIND %i (%i): ", i.i, m->index.i);
+    // }
+    // else {
+    //     printf("ANNO SIG %i (%i): ", i.i, m->index.i);
+    // }
+    // if (s->func_target.i) {
+    //     print_ident(f, s->func_target);
+    // }
+    // else {
+    //     print_operation(f, s->op_target);
+    // }
+    // printf("\n");
 
-    printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
-    printf("PARAMS:\n");
-    for (int i = 0; i < s->parameters.size; i++){
-        printf("%.*s", (indent + 2) * SPACE_PER_LEVEL, INDENT_CONST);
-        printf("%i: ", i);
-        SyntaxIndex *list_index = get_ast_node(((SyntaxIndex){i + 1}), s->parameters);
-        if (list_index->i) {
-            print_attr_list(f, *list_index);
-        }
-        else {
-            printf("NONE");
-        }
-        printf("\n");
-    }
+    // printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
+    // printf("PARAMS:\n");
+    // for (int i = 0; i < s->parameters.size; i++){
+    //     printf("%.*s", (indent + 2) * SPACE_PER_LEVEL, INDENT_CONST);
+    //     printf("%i: ", i);
+    //     SyntaxIndex *list_index = get_ast_node(((SyntaxIndex){i + 1}), s->parameters);
+    //     if (list_index->i) {
+    //         print_attr_list(f, *list_index);
+    //     }
+    //     else {
+    //         printf("NONE");
+    //     }
+    //     printf("\n");
+    // }
 
-    printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
-    printf("RETURN: ");
-    if (s->return_def.i) {
-        print_attr_list(f, s->return_def);
-    }
-    else {
-        printf("NONE");
-    }
-    printf("\n");
+    // printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
+    // printf("RETURN: ");
+    // if (s->return_def.i) {
+    //     print_attr_list(f, s->return_def);
+    // }
+    // else {
+    //     printf("NONE");
+    // }
+    // printf("\n");
 }
 
 void print_operation(SyntaxFactory *f, TokenType op) {

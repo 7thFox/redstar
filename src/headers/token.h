@@ -5,6 +5,7 @@
 #include "cursor.h"
 
 typedef enum {
+    TOK_NULL = 0,
     // 0-255: literal ascii
     TOK_USE = 256,
     TOK_USEPATH,

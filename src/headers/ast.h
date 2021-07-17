@@ -7,15 +7,6 @@
 #include "syntaxindex.h"
 #include "syntaxkind.h"
 
-typedef enum {
-    BIN_MULTIPLY,
-    BIN_DIVIDE,
-    BIN_ADD,
-    BIN_MINUS,
-    BIN_EQUALS,
-    BIN_NOT_EQUALS,
-} BinaryOperationKind;
-
 typedef struct {
     SyntaxIndex index;
     SyntaxKind  kind;
@@ -25,6 +16,15 @@ typedef struct {
     StringIndex filepath;
     SyntaxIndex block;
 } AstCompilationUnit;
+
+typedef enum {
+    BIN_MULTIPLY,
+    BIN_DIVIDE,
+    BIN_ADD,
+    BIN_MINUS,
+    BIN_EQUALS,
+    BIN_NOT_EQUALS,
+} BinaryOperationKind;
 
 typedef struct {
     ExpressionIndex expression_left;
@@ -114,16 +114,58 @@ typedef struct {
     SyntaxIndex ident;// TODO: list
 } AstAnnotateStatement;
 
+typedef enum {
+    BAS_BIND = 0x01,
+    BAS_ANNO = 0x10,
+
+    BAS_TARGET_OP   = 0x001 << 2,
+    BAS_TARGET_FUNC = 0x010 << 2,
+    BAS_TARGET_WILD = 0x100 << 2,
+
+    BAS_DEFS_ORDINAL = 0x01 << 5,
+    BAS_DEFS_WILD    = 0x10 << 5,
+
+    BAS_RETURN = 0x1 << 7,
+
+    _BAS_BIND_OP_ORDINAL = BAS_BIND | BAS_TARGET_OP | BAS_DEFS_ORDINAL,
+    _BAS_BIND_OP_ORDINAL_RETURN = BAS_BIND | BAS_TARGET_OP | BAS_DEFS_ORDINAL | BAS_RETURN,
+    _BAS_BIND_OP_WILD = BAS_BIND | BAS_TARGET_OP | BAS_DEFS_WILD,
+    _BAS_BIND_OP_WILD_RETURN = BAS_BIND | BAS_TARGET_OP | BAS_DEFS_WILD | BAS_RETURN,
+    _BAS_BIND_FUNC_ORDINAL = BAS_BIND | BAS_TARGET_FUNC | BAS_DEFS_ORDINAL,
+    _BAS_BIND_FUNC_ORDINAL_RETURN = BAS_BIND | BAS_TARGET_FUNC | BAS_DEFS_ORDINAL | BAS_RETURN,
+    _BAS_BIND_FUNC_WILD = BAS_BIND | BAS_TARGET_FUNC | BAS_DEFS_WILD,
+    _BAS_BIND_FUNC_WILD_RETURN = BAS_BIND | BAS_TARGET_FUNC | BAS_DEFS_WILD | BAS_RETURN,
+    _BAS_BIND_WILD = BAS_BIND | BAS_TARGET_WILD,
+    _BAS_BIND_WILD_RETURN = BAS_BIND | BAS_TARGET_WILD | BAS_RETURN,
+    _BAS_ANNO_OP_ORDINAL_RETURN = BAS_ANNO | BAS_TARGET_OP | BAS_DEFS_ORDINAL | BAS_RETURN,
+    _BAS_ANNO_OP_WILD_RETURN = BAS_ANNO | BAS_TARGET_OP | BAS_DEFS_WILD | BAS_RETURN,
+    _BAS_ANNO_FUNC_ORDINAL_RETURN = BAS_ANNO | BAS_TARGET_FUNC | BAS_DEFS_ORDINAL | BAS_RETURN,
+    _BAS_ANNO_FUNC_WILD_RETURN = BAS_ANNO | BAS_TARGET_FUNC | BAS_DEFS_WILD | BAS_RETURN,
+    _BAS_ANNO_WILD_RETURN = BAS_ANNO | BAS_TARGET_WILD | BAS_RETURN,
+
+
+} BindAnnoStatementKind;
+
 typedef struct {
-    SyntaxIndex index;
-    SyntaxArray *arr;
+    SyntaxIndex           index;
+    SyntaxArray           *arr;
+    BindAnnoStatementKind kind;
 } AstBindAnnoMap;
 
 typedef struct {
-    SyntaxIndex func_target;
-    TokenType   op_target;
-    SyntaxArray parameters; // [SyntaxIndex?] => AstAttrList
-    SyntaxIndex return_def;
+    SyntaxIndex func_target;   // BAS_TARGET_FUNC
+    TokenType   op_target;     // BAS_TARGET_OP
+    TokenType   wildcard;      // BAS_DEFS_WILD
+    SyntaxIndex wildcard_list; // BAS_DEFS_WILD
+    SyntaxIndex ordinals;      // BAS_DEFS_ORDINAL
+    SyntaxIndex return_def;    // BAS_RETURN
+
+    // NOTES:
+    // Anno MUST define a non-empty return
 } AstBindAnnoStatement;
+
+typedef struct {
+    SyntaxArray ordinals;// [SyntaxIndex?] => AstAttrList
+} AstBindAnnoOrdinals;
 
 #endif

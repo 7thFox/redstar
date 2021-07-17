@@ -7,8 +7,17 @@ void *next_array_elem(SyntaxArray *arr);
 StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
 
-void factory_error(SyntaxFactory *f, const char *missing) {
-    fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing %s\n",
+void factory_error(SyntaxFactory *f, const char *msg) {
+    fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: %s\n",
+            get_string(f, f->current_filepath),
+            f->tokens[*(f->current_token) + 1].p0.line,
+            f->tokens[*(f->current_token) + 1].p0.col,
+            msg);
+    error_common();
+}
+
+void factory_error_missing(SyntaxFactory *f, const char *missing) {
+    fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing: %s\n",
             get_string(f, f->current_filepath),
             f->tokens[*(f->current_token) + 1].p0.line,
             f->tokens[*(f->current_token) + 1].p0.col,
@@ -16,18 +25,18 @@ void factory_error(SyntaxFactory *f, const char *missing) {
     error_common();
 }
 
-#define assert(f, x, kind)         \
-    if (!x)                        \
-    {                              \
-        factory_error(f, kind);    \
-        return EMPTY_SYNTAX_INDEX; \
+#define assert(f, x, kind)              \
+    if (!x)                             \
+    {                                   \
+        factory_error_missing(f, kind); \
+        return EMPTY_SYNTAX_INDEX;      \
     }
 
-#define assert_node(f, x, kind)    \
-    if (!x.i)                      \
-    {                              \
-        factory_error(f, kind);    \
-        return EMPTY_SYNTAX_INDEX; \
+#define assert_node(f, x, kind)         \
+    if (!x.i)                           \
+    {                                   \
+        factory_error_missing(f, kind); \
+        return EMPTY_SYNTAX_INDEX;      \
     }
 
 SyntaxFactory *make_astfactory() {
@@ -44,6 +53,7 @@ SyntaxFactory *make_astfactory() {
     f->attr_lists = init_array(sizeof(AstAttrList), 4);
     f->param_lists = init_array(sizeof(AstParamList), 16);
     f->bind_anno_map = init_array(sizeof(AstBindAnnoMap), 32);
+    f->bind_anno_ordinals = init_array(sizeof(AstBindAnnoOrdinals), 32);
 
     f->statements = init_array(sizeof(_TypedIndex), 32);
     f->blocks = init_array(sizeof(AstBlock), 8);
@@ -54,10 +64,22 @@ SyntaxFactory *make_astfactory() {
     f->local_decl_statements = init_array(sizeof(AstLocalDecl), 8);
     f->if_statements = init_array(sizeof(AstIfStatement), 8);
     f->annotate_statements = init_array(sizeof(AstAnnotateStatement), 8);
-    f->bind_op_statements = init_array(sizeof(AstBindAnnoStatement), 8);
-    f->bind_func_statements = init_array(sizeof(AstBindAnnoStatement), 8);
-    f->anno_op_statements = init_array(sizeof(AstBindAnnoStatement), 8);
-    f->anno_func_statements = init_array(sizeof(AstBindAnnoStatement), 8);
+
+    f->bind_op_ordinal_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_op_ordinal_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_op_wild_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_op_wild_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_func_ordinal_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_func_ordinal_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_func_wild_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_func_wild_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->anno_op_ordinal_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->anno_op_wild_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->anno_func_ordinal_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->anno_func_wild_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_wild_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->bind_wild_statements = init_array(sizeof(AstBindAnnoStatement), 4);
+    f->anno_wild_return_statements = init_array(sizeof(AstBindAnnoStatement), 4);
 
     f->expressions = init_array(sizeof(_TypedIndex), 32);
     f->binary_expressions = init_array(sizeof(AstBinaryOperationExpression), 8);
@@ -85,6 +107,9 @@ void destroy_astfactory(SyntaxFactory *f) {
     for (int i = 0; i < f->param_lists.size; i++) {
         free(((AstParamList *)f->param_lists.array)[i].param_expressions.array);
     }
+    for (int i = 0; i < f->bind_anno_ordinals.size; i++) {
+        free(((AstBindAnnoOrdinals *)f->bind_anno_ordinals.array)[i].ordinals.array);
+    }
 
     free(f->compilation_units.array);
     free(f->identifiers.array);
@@ -94,6 +119,7 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->param_lists.array);
     free(f->attr_lists.array);
     free(f->bind_anno_map.array);
+    free(f->bind_anno_ordinals.array);
 
     free(f->statements.array);
     free(f->blocks.array);
@@ -104,10 +130,22 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->local_decl_statements.array);
     free(f->if_statements.array);
     free(f->annotate_statements.array);
-    free(f->bind_op_statements.array);
-    free(f->bind_func_statements.array);
-    free(f->anno_op_statements.array);
-    free(f->anno_func_statements.array);
+
+    free(f->bind_op_ordinal_statements.array);
+    free(f->bind_op_ordinal_return_statements.array);
+    free(f->bind_op_wild_statements.array);
+    free(f->bind_op_wild_return_statements.array);
+    free(f->bind_func_ordinal_statements.array);
+    free(f->bind_func_ordinal_return_statements.array);
+    free(f->bind_func_wild_statements.array);
+    free(f->bind_func_wild_return_statements.array);
+    free(f->anno_op_ordinal_return_statements.array);
+    free(f->anno_op_wild_return_statements.array);
+    free(f->anno_func_ordinal_return_statements.array);
+    free(f->anno_func_wild_return_statements.array);
+    free(f->bind_wild_return_statements.array);
+    free(f->bind_wild_statements.array);
+    free(f->anno_wild_return_statements.array);
 
     free(f->expressions.array);
     free(f->binary_expressions.array);
@@ -458,114 +496,168 @@ SyntaxIndex make_annotate_statement(SyntaxFactory *f, SyntaxIndex list, SyntaxIn
     return (SyntaxIndex){f->annotate_statements.size};
 }
 
-SyntaxIndex make_bind_operation_statement(SyntaxFactory *f, Token* bind, Token *op) {
-    debugf("make_bind_operation_statement\n");
-    assert(f, bind, "bind");
-    assert(f, op, "Operation");
-
-    AstBindAnnoStatement *s = next_array_elem(&f->bind_op_statements);
-    s->parameters = init_array(sizeof(SyntaxIndex), 4);
-    s->op_target = op->type;
-    s->return_def = EMPTY_SYNTAX_INDEX;
-    s->func_target = EMPTY_SYNTAX_INDEX;
-
-    AstBindAnnoMap *m = next_array_elem(&f->bind_anno_map);
-    m->arr = &f->bind_op_statements;
-    m->index = (SyntaxIndex){f->bind_op_statements.size};
-    return (SyntaxIndex){f->bind_anno_map.size};
-}
-
-SyntaxIndex make_bind_function_statement(SyntaxFactory *f, Token* bind, SyntaxIndex ident) {
-    debugf("make_bind_function_statement\n");
-    assert(f, bind, "bind");
-    assert_node(f, ident, "function ident");
-
-    AstBindAnnoStatement *s = next_array_elem(&f->bind_func_statements);
-    s->parameters = init_array(sizeof(SyntaxIndex), 4);
-    s->func_target = ident;
-    s->return_def = EMPTY_SYNTAX_INDEX;
-    s->op_target = 0;
-
-    AstBindAnnoMap *m = next_array_elem(&f->bind_anno_map);
-    m->arr = &f->bind_func_statements;
-    m->index = (SyntaxIndex){f->bind_func_statements.size};
-    return (SyntaxIndex){f->bind_anno_map.size};
-}
-
-SyntaxIndex make_anno_operation_statement(SyntaxFactory *f, Token* anno, Token *op) {
-    debugf("make_bind_operation_statement\n");
-    assert(f, anno, "anno");
-    assert(f, op, "Operation");
-
-    AstBindAnnoStatement *s = next_array_elem(&f->anno_op_statements);
-    s->parameters = init_array(sizeof(SyntaxIndex), 4);
-    s->op_target = op->type;
-    s->return_def = EMPTY_SYNTAX_INDEX;
-    s->func_target = EMPTY_SYNTAX_INDEX;
-
-    AstBindAnnoMap *m = next_array_elem(&f->bind_anno_map);
-    m->arr = &f->anno_op_statements;
-    m->index = (SyntaxIndex){f->anno_op_statements.size};
-    return (SyntaxIndex){f->bind_anno_map.size};
-}
-
-SyntaxIndex make_anno_function_statement(SyntaxFactory *f, Token* anno, SyntaxIndex ident) {
-    debugf("make_bind_operation_statement\n");
-    assert(f, anno, "anno");
-    assert_node(f, ident, "function ident");
-
-    AstBindAnnoStatement *s = next_array_elem(&f->anno_func_statements);
-    s->parameters = init_array(sizeof(SyntaxIndex), 4);
-    s->func_target = ident;
-    s->return_def = EMPTY_SYNTAX_INDEX;
-    s->op_target = 0;
-
-    AstBindAnnoMap *m = next_array_elem(&f->bind_anno_map);
-    m->arr = &f->anno_func_statements;
-    m->index = (SyntaxIndex){f->anno_func_statements.size};
-    return (SyntaxIndex){f->bind_anno_map.size};
-}
-
-SyntaxIndex add_bind_anno_definition(SyntaxFactory *f, SyntaxIndex stmt, SyntaxIndex def) {
-    debugf("add_bind_anno_definition\n");
-    if (stmt.i) {
-        assert_node(f, def, "attribute list");
-
-        AstBindAnnoMap *m = get_ast_node(stmt, f->bind_anno_map);
-        AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
-        SyntaxIndex *i = next_array_elem(&s->parameters);
-        *i = def;
-        return (SyntaxIndex){s->parameters.size};
-    }
-    return EMPTY_SYNTAX_INDEX;
-}
-
-SyntaxIndex add_bind_anno_definition_ignore(SyntaxFactory *f, SyntaxIndex stmt, Token *ignore) {
-    debugf("add_bind_anno_definition_ignore\n");
-    if (stmt.i) {
-        assert(f, ignore, "_");
-
-        AstBindAnnoMap *m = get_ast_node(stmt, f->bind_anno_map);
-        AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
-        SyntaxIndex *i = next_array_elem(&s->parameters);
-        *i = EMPTY_SYNTAX_INDEX;
-        return (SyntaxIndex){s->parameters.size};
-    }
-    return EMPTY_SYNTAX_INDEX;
-}
-
-void add_bind_anno_return(SyntaxFactory *f, SyntaxIndex stmt, Token *arrow, SyntaxIndex return_def){
-    debugf("add_bind_anno_definition_ignore\n");
-    if (stmt.i) {
-        if (!arrow) {
-            factory_error(f, "=>");
-        }
-        if (!return_def.i) {
-            factory_error(f, "attribute list");
+SyntaxIndex make_bind_anno_statement(SyntaxFactory *f,
+    BindAnnoStatementKind kind,
+    Token *bind_anno,
+    SyntaxIndex func, Token *op, Token *wild_target,
+    Token *wildcard_kind, SyntaxIndex wildcard_def, SyntaxIndex ordinals,
+    Token *arrow_opt, SyntaxIndex return_def_opt)
+{
+    SyntaxArray *arr;
+    switch (kind)
+    {
+        case _BAS_BIND_OP_ORDINAL:
+            arr = &f->bind_op_ordinal_statements;
+            break;
+        case _BAS_BIND_OP_ORDINAL_RETURN:
+            arr = &f->bind_op_ordinal_return_statements;
+            break;
+        case _BAS_BIND_OP_WILD:
+            arr = &f->bind_op_wild_statements;
+            break;
+        case _BAS_BIND_OP_WILD_RETURN:
+            arr = &f->bind_op_wild_return_statements;
+            break;
+        case _BAS_BIND_FUNC_ORDINAL:
+            arr = &f->bind_func_ordinal_statements;
+            break;
+        case _BAS_BIND_FUNC_ORDINAL_RETURN:
+            arr = &f->bind_func_ordinal_return_statements;
+            break;
+        case _BAS_BIND_FUNC_WILD:
+            arr = &f->bind_func_wild_statements;
+            break;
+        case _BAS_BIND_FUNC_WILD_RETURN:
+            arr = &f->bind_func_wild_return_statements;
+            break;
+        case _BAS_BIND_WILD:
+            arr = &f->bind_wild_statements;
+            break;
+        case _BAS_BIND_WILD_RETURN:
+            arr = &f->bind_wild_return_statements;
+            break;
+        case _BAS_ANNO_OP_ORDINAL_RETURN:
+            arr = &f->anno_op_ordinal_return_statements;
+            break;
+        case _BAS_ANNO_OP_WILD_RETURN:
+            arr = &f->anno_op_wild_return_statements;
+            break;
+        case _BAS_ANNO_FUNC_ORDINAL_RETURN:
+            arr = &f->anno_func_ordinal_return_statements;
+            break;
+        case _BAS_ANNO_FUNC_WILD_RETURN:
+            arr = &f->anno_func_wild_return_statements;
+            break;
+        case _BAS_ANNO_WILD_RETURN:
+            arr = &f->anno_wild_return_statements;
+            break;
+        default:
+            if ((kind & BAS_ANNO) == BAS_ANNO &&
+                (kind & BAS_RETURN) != BAS_RETURN)
+            {
+                factory_error(f, "Annos must define a non-empty return");
+            }
+            else {
+                factory_error(f, "Malformed Bind/Anno Kind");
+            }
+            return EMPTY_SYNTAX_INDEX;
         }
 
-        AstBindAnnoMap *m = get_ast_node(stmt, f->bind_anno_map);
-        AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
-        s->return_def = stmt;
+    AstBindAnnoStatement *s = next_array_elem(arr);
+
+    assert(f, bind_anno, "bind/anno");
+    bool mismatch = true;
+    switch (kind & 0x11)
+    {
+        case BAS_BIND:
+            mismatch = bind_anno->type != TOK_BIND;
+            break;
+        case BAS_ANNO:
+            mismatch = bind_anno->type != TOK_ANNOTATE;
+            break;
+        default:
+            factory_error(f, "Unexpected Bind/Anno type");
+            break;
     }
+    if (mismatch) {
+        factory_error(f, "Bind/anno token does not match kind");
+    }
+
+    switch (kind & (0x111 << 2))
+    {
+        case BAS_TARGET_FUNC:
+            assert_node(f, func, "func ident");
+            s->func_target = func;
+            s->op_target = TOK_NULL;
+            break;
+        case BAS_TARGET_OP:
+            assert(f, op, "operation");
+            s->op_target = op->type;
+            s->func_target = EMPTY_SYNTAX_INDEX;
+            break;
+        case BAS_TARGET_WILD:
+            assert(f, wild_target, "wildcard target");
+            s->op_target = TOK_NULL;
+            s->func_target = EMPTY_SYNTAX_INDEX;
+            break;
+        default:
+            factory_error(f, "Unexpected target type");
+            break;
+    }
+
+    switch (kind & (0x11 << 5))
+    {
+        case BAS_DEFS_ORDINAL:
+            assert_node(f, ordinals, "ordinal list");
+            s->ordinals = ordinals;
+            s->wildcard = TOK_NULL;
+            s->wildcard_list = EMPTY_SYNTAX_INDEX;
+            break;
+        case BAS_DEFS_WILD:
+            assert(f, wildcard_kind, "wildcard def type");
+            if (wildcard_kind->type != TOK_ANY &&
+                wildcard_kind->type != TOK_ALL &&
+                wildcard_kind->type != TOK_NONE)
+            {
+                factory_error(f, "Invalid wildcard def token");
+            }
+            s->wildcard = wildcard_kind->type;
+            s->wildcard_list = wildcard_def;
+            break;
+        default:
+            s->ordinals = EMPTY_SYNTAX_INDEX;
+            s->wildcard = TOK_NULL;
+            s->wildcard_list = EMPTY_SYNTAX_INDEX;
+            factory_error(f, "Unexpected definition type");
+            break;
+    }
+
+    if ((kind & BAS_RETURN) == BAS_RETURN) {
+        assert(f, arrow_opt, "=>");
+        assert_node(f, return_def_opt, "return attr list");
+        s->return_def = return_def_opt;
+    }
+
+    AstBindAnnoMap *map = next_array_elem(&f->bind_anno_map);
+    map->arr = arr;
+    map->kind = kind;
+    map->index = (SyntaxIndex){arr->size};
+
+    return (SyntaxIndex){f->bind_anno_map.size};
+}
+
+SyntaxIndex make_bind_anno_ordinals(SyntaxFactory *f) {
+    AstBindAnnoOrdinals *o = next_array_elem(&f->bind_anno_ordinals);
+    o->ordinals = init_array(sizeof(SyntaxIndex), 8);
+    return (SyntaxIndex){f->bind_anno_ordinals.size};
+}
+
+SyntaxIndex add_bind_anno_ordinal(SyntaxFactory *f, SyntaxIndex ordinal_list, SyntaxIndex attr_list_opt) {
+    if (ordinal_list.i) {
+        AstBindAnnoOrdinals *o = get_ast_node(ordinal_list, f->bind_anno_ordinals);
+        SyntaxIndex *i = next_array_elem(&o->ordinals);
+        *i = attr_list_opt;
+        return (SyntaxIndex){o->ordinals.size};
+    }
+    return EMPTY_SYNTAX_INDEX;
 }
