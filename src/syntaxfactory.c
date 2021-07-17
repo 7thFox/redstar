@@ -7,7 +7,7 @@ void *next_array_elem(SyntaxArray *arr);
 StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
 
-static inline void factory_error(SyntaxFactory *f, const char *missing) {
+void factory_error(SyntaxFactory *f, const char *missing) {
     fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing %s\n",
             get_string(f, f->current_filepath),
             f->tokens[*(f->current_token) + 1].p0.line,

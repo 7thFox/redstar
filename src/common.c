@@ -12,7 +12,8 @@ void error_common() {
         int nbt = backtrace(bt, BT_BUFFER_SIZE);
         char **symbols = backtrace_symbols(bt, BT_BUFFER_SIZE);
         printf("Stack Trace:\n");
-        for (int i = 0; i < nbt; i++)
+        // Skipping first frame (error_common) + 1 (calling error function)
+        for (int i = 2; i < nbt; i++)
         {
             printf("\t%s\n", symbols[i]);
         }
