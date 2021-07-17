@@ -13,6 +13,7 @@ static inline void factory_error(SyntaxFactory *f, const char *missing) {
             f->tokens[*(f->current_token) + 1].p0.line,
             f->tokens[*(f->current_token) + 1].p0.col,
             missing);
+    error_common();
 }
 
 #define assert(f, x, kind)         \

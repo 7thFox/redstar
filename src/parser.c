@@ -131,6 +131,7 @@ void parse_error(Parser *p, const char *msg) {
     Cursor c = p->factory->tokens[p->current].p0;
     fprintf(stderr, "PARSE_ERROR in %s:%i:%i: %s\n", get_string(p->factory, p->factory->current_filepath), c.line, c.col, msg);
     p->has_error = true;
+    error_common();
 }
 
 // Parse Functions

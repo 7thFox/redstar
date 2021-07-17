@@ -1,11 +1,14 @@
 
 build:
 	@[[ -d bin ]] || mkdir bin
-	# gcc src/*.c -D _DEFAULT_SOURCE -o bin/redstar
 	gcc src/*.c -Wall -pedantic-errors -D _DEFAULT_SOURCE -o bin/redstar
 
-test1: build
-	@bin/redstar -debug -printlex tests/test1
+debug:
+	@[[ -d bin ]] || mkdir bin
+	gcc src/*.c -Wall -rdynamic -pedantic-errors -D _DEFAULT_SOURCE -o bin/redstar
 
-testanno: build
-	@bin/redstar -debug -printlex tests/annotest
+test1: debug
+	@bin/redstar -debug -printlex -printtree tests/test1
+
+testanno: debug
+	@bin/redstar -debug -printlex -printtree tests/annotest

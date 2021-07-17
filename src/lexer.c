@@ -267,6 +267,7 @@ void lex_error(Lexer *l, const char * msg) {
     emit_token(l, LEX_ERROR);
     fprintf(stderr, "LEX_ERROR in %s:%i:%i: %s\n", l->filepath, l->current.line, l->current.col, msg);
     l->has_error = true;
+    error_common();
 }
 
 static inline bool required(Lexer *l, bool ret_val, const char * desc) {

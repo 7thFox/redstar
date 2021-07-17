@@ -10,22 +10,16 @@
 #define debugf(...) ;
 // #define debugf(...) printf(__VA_ARGS__)
 
-typedef struct {
-    char *dir_path;
-    bool is_debug;
-    bool printlex;
-} program_args;
-
-int parse_file(const char *filePath, Parser *parser);
-int parseArgs(int argc, char ** argv);
-
-program_args args;
+int parse_file(program_args args, const char *filePath, Parser *parser);
 
 int main(int argc, char ** argv) {
-    if (parseArgs(argc, argv) != 0) {
+    if (!parseArgs(argc, argv)) {
         fprintf(stderr, "failed to parse args\n");
         return 1;
+
     }
+
+    program_args args = get_args();
 
     DIR *dr;
     debugf("root dir: %s\n", args.dir_path);
@@ -44,7 +38,7 @@ int main(int argc, char ** argv) {
         if (de->d_type == DT_REG) {
 
             sprintf(buff, "%s/%s", args.dir_path, de->d_name);
-            if (parse_file(buff, parser)) break;
+            if (parse_file(args, buff, parser)) break;
         }
         else if (de->d_type == DT_DIR) {
             // TODO: recursive
@@ -58,31 +52,7 @@ int main(int argc, char ** argv) {
     destroy_parser(parser);
 }
 
-int parseArgs(int argc, char ** argv){
-    bool dirSet = false;
-    for (int i = 1; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-debug") == 0) {
-            debugf("DEBUG\n");
-            args.is_debug = 1;
-        }
-        else if (strcmp(argv[i], "-printlex") == 0) {
-            args.printlex = 1;
-        }
-        else {
-            if (i != argc - 1) return 1;
-            dirSet = true;
-            args.dir_path = argv[i];
-        }
-    }
-
-    if (!dirSet) {
-        return 1;
-    }
-    return 0;
-}
-
-int parse_file(const char* filePath, Parser *parser) {
+int parse_file(program_args args, const char* filePath, Parser *parser) {
     debugf("parsing file '%s'...\n", filePath);
 
     FILE *f = fopen(filePath, "r");
