@@ -1,4 +1,4 @@
-debugparams = -printlex -printtree
+debugparams = -printsymbols
 
 build-release:
 	@[[ -d bin ]] || mkdir bin
@@ -9,7 +9,7 @@ build:
 	gcc src/*.c -Wall -rdynamic -pedantic-errors -D _DEFAULT_SOURCE -o bin/redstar
 
 test1: build
-	@bin/redstar -debug $(debugparams) tests/test1
+	bin/redstar -debug $(debugparams) tests/test1
 
 testanno: build
-	@bin/redstar -debug $(debugparams) tests/testanno
+	bin/redstar -debug $(debugparams) tests/testanno

@@ -2,8 +2,8 @@
 #define debugf(...) ;
 // #define debugf(...) printf("=>"); printf(__VA_ARGS__)
 
-SyntaxArray init_array(size_t elem_size, uint16_t cap);
-void *next_array_elem(SyntaxArray *arr);
+DynamicArray init_array(size_t elem_size, uint16_t cap);
+void *next_array_elem(DynamicArray *arr);
 StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
 
@@ -158,34 +158,6 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->function_calls.array);
 }
 
-SyntaxArray init_array(size_t elem_size, uint16_t cap) {
-    SyntaxArray a;
-    a.elem_size = elem_size;
-    a.capacity = cap;
-    a.size = 0;
-    a.array = malloc(elem_size * cap);
-    return a;
-}
-
-void *next_array_elem(SyntaxArray *arr) {
-    arr->size++;
-    if (arr->size > arr->capacity) {
-        uint16_t newcap = arr->capacity < SYNTAX_ARRAY_MAX_GROW
-            ? arr->capacity * 2
-            : arr->capacity + SYNTAX_ARRAY_MAX_GROW;
-        if (newcap > SYNTAX_ARRAY_MAX_CAPACITY) {
-            if (arr->capacity == SYNTAX_ARRAY_MAX_CAPACITY) {
-                // TODO: be sad now
-            }
-            newcap = SYNTAX_ARRAY_MAX_CAPACITY;
-        }
-        arr->capacity = newcap;
-        arr->array = realloc(arr->array, arr->elem_size * arr->capacity);
-    }
-
-    return arr->array + ((arr->size - 1) * arr->elem_size);
-}
-
 StringIndex copy_string(SyntaxFactory *f, const char *str) {
     size_t len = strlen(str) + 1;
     if (f->strings_size.i + len > f->strings_capacity.i) {
@@ -199,7 +171,7 @@ StringIndex copy_string(SyntaxFactory *f, const char *str) {
     strcpy(f->strings + index.i, str);
     f->strings[len - 1] = '\0';
     f->strings_size.i += len;
-    
+
     return index;
 }
 
@@ -292,14 +264,14 @@ SyntaxIndex make_attr_decl(SyntaxFactory *f, Token *attr, SyntaxIndex ident, Syn
     return (SyntaxIndex){f->attribute_declarations.size};
 }
 
-SyntaxIndex make_func_decl(SyntaxFactory *f, 
-    Token *func, 
-    SyntaxIndex ident, 
-    Token *left_paran, 
-    SyntaxIndex param_list_opt, 
-    Token *right_paran, 
-    SyntaxIndex return_type_opt, 
-    SyntaxIndex block) 
+SyntaxIndex make_func_decl(SyntaxFactory *f,
+    Token *func,
+    SyntaxIndex ident,
+    Token *left_paran,
+    SyntaxIndex param_list_opt,
+    Token *right_paran,
+    SyntaxIndex return_type_opt,
+    SyntaxIndex block)
 {
     assert(f, func, "Func Keyword");
     assert_node(f, ident, "Ident");
@@ -428,10 +400,10 @@ SyntaxIndex make_return_statement(SyntaxFactory *f, Token *return_token, Express
     return (SyntaxIndex){f->return_statements.size};
 }
 
-SyntaxIndex make_local_decl(SyntaxFactory *f, 
-    SyntaxIndex ident, Token *colon, SyntaxIndex type_opt, 
-    Token *equals_opt, ExpressionIndex expresion_opt, 
-    Token *semicolon) 
+SyntaxIndex make_local_decl(SyntaxFactory *f,
+    SyntaxIndex ident, Token *colon, SyntaxIndex type_opt,
+    Token *equals_opt, ExpressionIndex expresion_opt,
+    Token *semicolon)
 {
     assert_node(f, ident, "Ident");
     assert(f, colon, ":");
@@ -451,7 +423,7 @@ SyntaxIndex make_local_decl(SyntaxFactory *f,
     return (SyntaxIndex){f->local_decl_statements.size};
 }
 
-SyntaxIndex make_function_call(SyntaxFactory *f, 
+SyntaxIndex make_function_call(SyntaxFactory *f,
     ExpressionIndex expression, Token *left, SyntaxIndex param_list_opt, Token *right) {
     debugf("make_function_call_expression\n");
     assert_node(f, expression, "Expression");
@@ -539,7 +511,7 @@ SyntaxIndex make_bind_anno_statement(SyntaxFactory *f,
     Token *arrow_opt, SyntaxIndex return_def_opt)
 {
     debugf("make_bind_anno_statement\n");
-    SyntaxArray *arr;
+    DynamicArray *arr;
     switch (kind)
     {
         case _BAS_BIND_OP_ORDINAL:

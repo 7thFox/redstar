@@ -5,6 +5,7 @@
 #include "common.h"
 #include "token.h"
 #include "syntaxindex.h"
+#include "darray.h"
 #include "syntaxkind.h"
 
 typedef struct {
@@ -47,7 +48,7 @@ typedef struct {
 } AstFuncDecl;
 
 typedef struct {
-    SyntaxArray param_decls;// [SyntaxIndex] -> AstParameterDecl
+    DynamicArray param_decls;// [SyntaxIndex] -> AstParameterDecl
 } AstParameterListDecl;
 
 typedef struct {
@@ -61,7 +62,7 @@ typedef struct {
 } AstType;
 
 typedef struct {
-    SyntaxArray attributes;// [SyntaxIndex] -> AstAttrListElem
+    DynamicArray attributes;// [SyntaxIndex] -> AstAttrListElem
 } AstAttrList;
 
 typedef struct {
@@ -74,7 +75,7 @@ typedef struct {
 } AstIdent;
 
 typedef struct {
-    SyntaxArray statements;// [StatementIndex]
+    DynamicArray statements;// [StatementIndex]
 } AstBlock;
 
 typedef struct {
@@ -113,12 +114,12 @@ typedef struct {
 } AstLiteralExpression;
 
 typedef struct {
-    SyntaxArray param_expressions;// [ExpressionIndex]
+    DynamicArray param_expressions;// [ExpressionIndex]
 } AstParamList;
 
 typedef struct {
     SyntaxIndex attr_list;
-    SyntaxArray ident_list;// [SyntaxIndex] => AstIdent
+    DynamicArray ident_list;// [SyntaxIndex] => AstIdent
 } AstAnnotateStatement;
 
 typedef enum {
@@ -155,7 +156,7 @@ typedef enum {
 
 typedef struct {
     SyntaxIndex           index;
-    SyntaxArray           *arr;
+    DynamicArray           *arr;
     BindAnnoStatementKind kind;
 } AstBindAnnoMap;
 
@@ -172,7 +173,7 @@ typedef struct {
 } AstBindAnnoStatement;
 
 typedef struct {
-    SyntaxArray ordinals;// [SyntaxIndex?] => AstAttrList
+    DynamicArray ordinals;// [SyntaxIndex?] => AstAttrList
 } AstBindAnnoOrdinals;
 
 #endif

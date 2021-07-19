@@ -6,6 +6,7 @@
 #include "ast.h"
 #include "lexer.h"
 #include "syntaxindex.h"
+#include "darray.h"
 
 typedef struct {
     // AstCompilationUnit   *current_unit;
@@ -21,48 +22,48 @@ typedef struct {
     token_index *current_token;
     // Location last_location;
 
-    SyntaxArray compilation_units;
-    SyntaxArray identifiers;
-    SyntaxArray types;
-    SyntaxArray param_list_decls;
-    SyntaxArray param_decls;
-    SyntaxArray attr_lists;
-    SyntaxArray attr_lists_elems;
-    SyntaxArray param_lists;
-    SyntaxArray bind_anno_map;
-    SyntaxArray bind_anno_ordinals;
+    DynamicArray compilation_units;
+    DynamicArray identifiers;
+    DynamicArray types;
+    DynamicArray param_list_decls;
+    DynamicArray param_decls;
+    DynamicArray attr_lists;
+    DynamicArray attr_lists_elems;
+    DynamicArray param_lists;
+    DynamicArray bind_anno_map;
+    DynamicArray bind_anno_ordinals;
 
-    SyntaxArray statements;
-    SyntaxArray blocks;
-    SyntaxArray use_statements;
-    SyntaxArray attribute_declarations;
-    SyntaxArray func_declarations;
-    SyntaxArray return_statements;
-    SyntaxArray local_decl_statements;
-    SyntaxArray if_statements;
-    SyntaxArray annotate_statements;
+    DynamicArray statements;
+    DynamicArray blocks;
+    DynamicArray use_statements;
+    DynamicArray attribute_declarations;
+    DynamicArray func_declarations;
+    DynamicArray return_statements;
+    DynamicArray local_decl_statements;
+    DynamicArray if_statements;
+    DynamicArray annotate_statements;
 
     // bind/anno
-    SyntaxArray bind_op_ordinal_statements;
-    SyntaxArray bind_op_ordinal_return_statements;
-    SyntaxArray bind_op_wild_statements;
-    SyntaxArray bind_op_wild_return_statements;
-    SyntaxArray bind_func_ordinal_statements;
-    SyntaxArray bind_func_ordinal_return_statements;
-    SyntaxArray bind_func_wild_statements;
-    SyntaxArray bind_func_wild_return_statements;
-    SyntaxArray anno_op_ordinal_return_statements;
-    SyntaxArray anno_op_wild_return_statements;
-    SyntaxArray anno_func_ordinal_return_statements;
-    SyntaxArray anno_func_wild_return_statements;
-    SyntaxArray bind_wild_statements;
-    SyntaxArray bind_wild_return_statements;
-    SyntaxArray anno_wild_return_statements;
+    DynamicArray bind_op_ordinal_statements;
+    DynamicArray bind_op_ordinal_return_statements;
+    DynamicArray bind_op_wild_statements;
+    DynamicArray bind_op_wild_return_statements;
+    DynamicArray bind_func_ordinal_statements;
+    DynamicArray bind_func_ordinal_return_statements;
+    DynamicArray bind_func_wild_statements;
+    DynamicArray bind_func_wild_return_statements;
+    DynamicArray anno_op_ordinal_return_statements;
+    DynamicArray anno_op_wild_return_statements;
+    DynamicArray anno_func_ordinal_return_statements;
+    DynamicArray anno_func_wild_return_statements;
+    DynamicArray bind_wild_statements;
+    DynamicArray bind_wild_return_statements;
+    DynamicArray anno_wild_return_statements;
 
-    SyntaxArray expressions;
-    SyntaxArray binary_expressions;
-    SyntaxArray literal_expressions;
-    SyntaxArray function_calls;
+    DynamicArray expressions;
+    DynamicArray binary_expressions;
+    DynamicArray literal_expressions;
+    DynamicArray function_calls;
 
     char        *strings;
     StringIndex strings_size;

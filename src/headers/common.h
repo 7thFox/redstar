@@ -13,9 +13,11 @@ void error_common();
 typedef struct {
     char *dir_path;
     bool is_debug;
+    bool allerr;
+
     bool printlex;
     bool printtree;
-    bool allerr;// -allerr
+    bool printsymbols;
 } program_args;
 
 bool parseArgs(int argc, char ** argv);

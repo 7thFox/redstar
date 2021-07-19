@@ -2,6 +2,7 @@
 #include "headers/lexer.h"
 #include "headers/parser.h"
 #include "headers/printast.h"
+#include "headers/symboltable.h"
 
 #include "dirent.h"
 #include "stdio.h"
@@ -47,7 +48,14 @@ int main(int argc, char ** argv) {
     closedir(dr);
 
     if (!parser->has_error) {
-        print_ast(parser);
+        if (args.printtree) {
+            print_ast(parser);
+        }
+
+        debugf("Creating Symbol Table...");
+        SymbolTable *st = create_symbol_table(parser);
+
+        destroy_symbol_table(st);
     }
     destroy_parser(parser);
 }

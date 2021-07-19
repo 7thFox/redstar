@@ -36,14 +36,17 @@ bool parseArgs(int argc, char ** argv){
         if (strcmp(argv[i], "-debug") == 0) {
             _args.is_debug = true;
         }
+        else if (strcmp(argv[i], "-allerr") == 0) {
+            _args.allerr = true;
+        }
         else if (strcmp(argv[i], "-printlex") == 0) {
             _args.printlex = true;
         }
         else if (strcmp(argv[i], "-printtree") == 0) {
             _args.printtree = true;
         }
-        else if (strcmp(argv[i], "-allerr") == 0) {
-            _args.allerr = true;
+        else if (strcmp(argv[i], "-printsymbols") == 0) {
+            _args.printsymbols = true;
         }
         else {
             if (i != argc - 1) return false;
