@@ -7,6 +7,7 @@
 #include "syntaxindex.h"
 #include "darray.h"
 #include "syntaxkind.h"
+#include "scope.h"
 
 typedef struct {
     SyntaxIndex index;
@@ -72,6 +73,7 @@ typedef struct {
 
 typedef struct {
     StringIndex name;
+    ScopeId     scope;
 } AstIdent;
 
 typedef struct {

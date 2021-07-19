@@ -10,7 +10,7 @@
 #include <string.h>
 #define debugf(...) ;
 // #define debugf(...) printf(__VA_ARGS__)
-
+void post_parse(Parser *p, program_args args);
 int parse_file(program_args args, const char *filePath, Parser *parser);
 
 int main(int argc, char ** argv) {
@@ -48,14 +48,7 @@ int main(int argc, char ** argv) {
     closedir(dr);
 
     if (!parser->has_error) {
-        if (args.printtree) {
-            print_ast(parser);
-        }
-
-        debugf("Creating Symbol Table...");
-        SymbolTable *st = create_symbol_table(parser);
-
-        destroy_symbol_table(st);
+        post_parse(parser, args);
     }
     destroy_parser(parser);
 }
@@ -92,4 +85,15 @@ int parse_file(program_args args, const char* filePath, Parser *parser) {
     free(r.text);
 
     return parser->has_error;
+}
+
+void post_parse(Parser *p, program_args args) {
+        if (args.printtree) {
+            print_ast(p);
+        }
+
+        debugf("Creating Symbol Table...");
+        SymbolTable *st = create_symbol_table(p);
+
+        destroy_symbol_table(st);
 }

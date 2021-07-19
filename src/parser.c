@@ -85,6 +85,12 @@ void parse_lex(Parser *p, LexResult *lex, const char *file_path) {
     p->factory->current_filepath = unit->filepath;
     SyntaxIndex block = unit->block;
 
+    STScope *scope = next_array_elem(&p->factory->scopes);
+    scope->comp_unit = unit_index;
+    scope->block = block;
+    scope->id_parent = (ScopeId){0};
+    p->factory->current_scope = (ScopeId){p->factory->scopes.size};
+
     SyntaxIndex u;
     while ((u = parse_use_statement(p)).i) {
         add_statement(p->factory, block, 
@@ -197,15 +203,32 @@ SyntaxIndex parse_func_decl(Parser *p) {
     debugf("parse_func_decl\n");
     Token *func;
     if ((func = accept_token(p, TOK_FUNC))) {
+        SyntaxIndex block = make_block(p->factory);// because of param scoping, we custom parse the block
+
         SyntaxIndex ident = parse_ident(p);
         Token *left = accept_token(p, '(');
+        push_scope(p->factory, block);
         SyntaxIndex param_list = parse_parameter_list_decl(p);
         Token *right = accept_token(p, ')');
         SyntaxIndex return_type = EMPTY_SYNTAX_INDEX;
         if (!peek_token(p, '{')) {
             return_type = parse_type(p);
         }
-        SyntaxIndex block = parse_block(p);
+
+        // PARSE_BLOCK START
+        if (!accept_token(p, '{')) {
+            parse_error(p, "Expected block");
+        }
+        StatementIndex s;
+        while ((s = parse_statement(p)).i) {
+            add_statement(p->factory, block, s);
+        }
+
+        if (!accept_token(p, '}')) {
+            parse_error(p, "Expected }");
+        }
+        pop_scope(p->factory);
+        // PARSE_BLOCK END
 
         debugf("parse_func_decl (END)\n");
         return make_func_decl(p->factory, func, ident, left, param_list, right, return_type, block);
@@ -274,16 +297,16 @@ SyntaxIndex parse_block(Parser *p) {
     debugf("parse_block\n");
     if (accept_token(p, '{')) {
         SyntaxIndex block = make_block(p->factory);
-        
+        push_scope(p->factory, block);
         StatementIndex s;
         while ((s = parse_statement(p)).i) {
             add_statement(p->factory, block, s);
         }
-        
+
         if (!accept_token(p, '}')) {
             parse_error(p, "Expected }");
         }
-
+        pop_scope(p->factory);
         return block;
     }
     return EMPTY_SYNTAX_INDEX;

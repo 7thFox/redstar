@@ -9,21 +9,20 @@
 #include "darray.h"
 
 typedef struct {
-    // AstCompilationUnit   *current_unit;
-    // AstBlock             *current_block;
-    // SyntaxIndex          current_block_index;
-    // AstParameterListDecl *current_param_list_decl;
-    // AstAttrList          *current_attr_list;
     const char  *current_text;
     StringIndex current_filepath;
 
     // kinda hackish but I want that location...
     Token *tokens;
     token_index *current_token;
-    // Location last_location;
+    ScopeId current_scope;
+
+    DynamicArray scopes;
+    DynamicArray ident_decls; // [SyntaxIndex] => AstIdent
 
     DynamicArray compilation_units;
     DynamicArray identifiers;
+    DynamicArray ident_references;
     DynamicArray types;
     DynamicArray param_list_decls;
     DynamicArray param_decls;
@@ -79,6 +78,8 @@ StatementIndex make_statement(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k);
 ExpressionIndex make_expression(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k);
 SyntaxFactory *make_astfactory();
 void destroy_astfactory(SyntaxFactory *factory);
+void push_scope(SyntaxFactory *factory, SyntaxIndex block);
+void pop_scope(SyntaxFactory *factory);
 
 // make_
 SyntaxIndex make_compilation_unit(SyntaxFactory *factory, LexResult *lex, const char *file_path);

@@ -6,6 +6,7 @@ DynamicArray init_array(size_t elem_size, uint16_t cap);
 void *next_array_elem(DynamicArray *arr);
 StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
+void add_ident_to_decls(SyntaxFactory *f, SyntaxIndex ident);
 
 void factory_error(SyntaxFactory *f, const char *msg) {
     fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: %s\n",
@@ -44,6 +45,9 @@ SyntaxFactory *make_astfactory() {
     SyntaxFactory *f = malloc(sizeof(SyntaxFactory));
     f->current_text = 0;
     f->current_filepath = (StringIndex){0};
+
+    f->scopes = init_array(sizeof(STScope), 64);
+    f->ident_decls = init_array(sizeof(SyntaxIndex), 32);
 
     f->compilation_units = init_array(sizeof(AstCompilationUnit), 8);
     f->identifiers = init_array(sizeof(AstIdent), 128);
@@ -115,6 +119,9 @@ void destroy_astfactory(SyntaxFactory *f) {
         free(((AstAnnotateStatement *)f->annotate_statements.array)[i].ident_list.array);
     }
 
+    free(f->scopes.array);
+    free(f->ident_decls.array);
+
     free(f->compilation_units.array);
     free(f->identifiers.array);
     free(f->types.array);
@@ -156,6 +163,25 @@ void destroy_astfactory(SyntaxFactory *f) {
     free(f->binary_expressions.array);
     free(f->literal_expressions.array);
     free(f->function_calls.array);
+}
+
+void push_scope(SyntaxFactory *f, SyntaxIndex block) {
+    STScope *s = next_array_elem(&f->scopes);
+    s->id_parent = f->current_scope;
+    s->block = block;
+    s->comp_unit = EMPTY_SYNTAX_INDEX;
+
+    f->current_scope = (ScopeId){f->scopes.size};
+}
+
+void pop_scope(SyntaxFactory *f) {
+    STScope *current = get_ast_node(f->current_scope, f->scopes);
+    f->current_scope = current->id_parent;
+}
+
+void add_ident_to_decls(SyntaxFactory *f, SyntaxIndex ident) {
+    SyntaxIndex *i = next_array_elem(&f->ident_decls);
+    i->i = ident.i;
 }
 
 StringIndex copy_string(SyntaxFactory *f, const char *str) {
@@ -251,6 +277,7 @@ SyntaxIndex make_ident(SyntaxFactory *f, Token *name) {
     assert(f, name, "Ident Name");
     AstIdent *ident = next_array_elem(&f->identifiers);
     ident->name = copy_token_string(f, name);
+    ident->scope = f->current_scope;
     return (SyntaxIndex){f->identifiers.size};
 }
 
@@ -261,6 +288,7 @@ SyntaxIndex make_attr_decl(SyntaxFactory *f, Token *attr, SyntaxIndex ident, Syn
     AstAttrDecl *decl = next_array_elem(&f->attribute_declarations);
     decl->ident = ident;
     decl->block_opt = block;
+    add_ident_to_decls(f, ident);
     return (SyntaxIndex){f->attribute_declarations.size};
 }
 
@@ -284,6 +312,7 @@ SyntaxIndex make_func_decl(SyntaxFactory *f,
     decl->param_list_opt = param_list_opt;
     decl->return_type_opt = return_type_opt;
     decl->block = block;
+    add_ident_to_decls(f, ident);
 
     return (SyntaxIndex){f->func_declarations.size};
 }
@@ -315,7 +344,7 @@ SyntaxIndex make_param_decl(SyntaxFactory *f, SyntaxIndex ident, Token *colon, S
     AstParameterDecl *decl = next_array_elem(&f->param_decls);
     decl->ident = ident;
     decl->type = type;
-
+    add_ident_to_decls(f, ident);
     return (SyntaxIndex){f->param_decls.size};
 }
 
@@ -419,6 +448,7 @@ SyntaxIndex make_local_decl(SyntaxFactory *f,
     decl->ident = ident;
     decl->type_opt = type_opt;
     decl->expression_opt = expresion_opt;
+    add_ident_to_decls(f, ident);
 
     return (SyntaxIndex){f->local_decl_statements.size};
 }
@@ -492,6 +522,7 @@ SyntaxIndex make_annotate_statement(SyntaxFactory *f, SyntaxIndex list) {
     a->ident_list = init_array(sizeof(SyntaxIndex), 8);
     return (SyntaxIndex){f->annotate_statements.size};
 }
+
 SyntaxIndex add_ident_to_annotate(SyntaxFactory *f, SyntaxIndex annotate, SyntaxIndex ident) {
     if (annotate.i) {
         assert_node(f, ident, "Ident");

@@ -5,15 +5,27 @@
 #include "parser.h"
 #include "darray.h"
 
-typedef struct{uint16_t i;} ScopeId;
+// typedef struct{uint16_t i} SymbolId;
+
+// typedef struct {
+//     // uint8_t hash;
+//     int collisions;
+// } STSymbolBucket;
+
+// typedef struct {
+//     StringIndex name;
+//     SymbolId    id;
+// } STSymbolBucketEntry;
 
 typedef struct {
-    ScopeId scope_id;
-    ScopeId scope_id_parent;
-} STScope;
+    StringIndex name;
+    ScopeId     decl_scope;
+} STSymbol;
 
-typedef struct {
-    DynamicArray scopes;
+typedef struct
+{
+    size_t nsymbols;
+    STSymbol *symbols;
 } SymbolTable;
 
 SymbolTable *create_symbol_table(Parser *parser);
