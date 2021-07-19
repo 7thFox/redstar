@@ -18,12 +18,13 @@ typedef struct {
 } AstCompilationUnit;
 
 typedef enum {
-    BIN_MULTIPLY,
-    BIN_DIVIDE,
     BIN_ADD,
     BIN_MINUS,
+    BIN_MULTIPLY,
+    BIN_DIVIDE,
     BIN_EQUALS,
     BIN_NOT_EQUALS,
+    BIN_MODULUS,
 } BinaryOperationKind;
 
 typedef struct {
@@ -103,6 +104,7 @@ typedef struct {
 typedef struct {
     ExpressionIndex condition;
     StatementIndex  statement;
+    StatementIndex  else_statement;
 } AstIfStatement;
 
 typedef struct {
@@ -116,7 +118,7 @@ typedef struct {
 
 typedef struct {
     SyntaxIndex attr_list;
-    SyntaxIndex ident;// TODO: list
+    SyntaxArray ident_list;// [SyntaxIndex] => AstIdent
 } AstAnnotateStatement;
 
 typedef enum {

@@ -1,6 +1,6 @@
 #include "headers/syntaxfactory.h"
-// #define debugf(...) ;
-#define debugf(...) printf("=>"); printf(__VA_ARGS__)
+#define debugf(...) ;
+// #define debugf(...) printf("=>"); printf(__VA_ARGS__)
 
 SyntaxArray init_array(size_t elem_size, uint16_t cap);
 void *next_array_elem(SyntaxArray *arr);
@@ -110,6 +110,9 @@ void destroy_astfactory(SyntaxFactory *f) {
     }
     for (int i = 0; i < f->bind_anno_ordinals.size; i++) {
         free(((AstBindAnnoOrdinals *)f->bind_anno_ordinals.array)[i].ordinals.array);
+    }
+    for (int i = 0; i < f->annotate_statements.size; i++) {
+        free(((AstAnnotateStatement *)f->annotate_statements.array)[i].ident_list.array);
     }
 
     free(f->compilation_units.array);
@@ -398,16 +401,16 @@ SyntaxIndex make_binary_expression(SyntaxFactory *f, ExpressionIndex left, Token
     case '-': exp->operation = BIN_MINUS; break;
     case '*': exp->operation = BIN_MULTIPLY; break;
     case '/': exp->operation = BIN_DIVIDE; break;
+    case '%': exp->operation = BIN_MODULUS; break;
 
     case TOK_EQUALITY:   exp->operation = BIN_EQUALS; break;
     case TOK_NOT_EQUALS: exp->operation = BIN_NOT_EQUALS; break;
-    // case '%': new_priority = EXP_ADD; break;
-    // case TOK_OR: new_priority = EXP_ADD; break;
-    // case TOK_AND: new_priority = EXP_ADD; break;
-    // case '|': new_priority = EXP_ADD; break;
-    // case '&': new_priority = EXP_ADD; break;
     default:
-        fprintf(stderr, "Unexpected binary operator '%c' (%i)\n", op->type, op->type);
+        {
+            char err[256];
+            snprintf(err, 256, "Unexpected binary operator '%c' (%i)\n", op->type, op->type);
+            factory_error(f, err);
+        }
         return EMPTY_SYNTAX_INDEX;
     }
 #pragma GCC diagnostic pop
@@ -460,17 +463,24 @@ SyntaxIndex make_function_call(SyntaxFactory *f,
     return (SyntaxIndex){f->function_calls.size};
 }
 
-SyntaxIndex make_if_statement(SyntaxFactory *f, Token *if_tok, Token *left, ExpressionIndex cond, Token *right, StatementIndex stmt) {
+SyntaxIndex make_if_statement(SyntaxFactory *f,
+    Token *if_tok, Token *left, ExpressionIndex cond, Token *right,
+    StatementIndex stmt,
+    Token *else_opt, StatementIndex else_stmt_opt) {
     debugf("make_if_statement\n");
-    assert(f, if_tok, "If Keyword");
+    assert(f, if_tok, "ff keyword");
     assert(f, left, "(");
-    assert_node(f, cond, "Condition Expression");
+    assert_node(f, cond, "condition expression");
     assert(f, right, ")");
-    assert_node(f, stmt, "Statement");
+    assert_node(f, stmt, "statement");
+    if (else_opt) {
+        assert_node(f, else_stmt_opt, "else statement")
+    }
 
     AstIfStatement *is = next_array_elem(&f->if_statements);
     is->condition = cond;
     is->statement = stmt;
+    is->else_statement = else_stmt_opt;
     return (SyntaxIndex){f->if_statements.size};
 }
 
@@ -502,15 +512,23 @@ SyntaxIndex add_param(SyntaxFactory *f, SyntaxIndex list, ExpressionIndex exp) {
     return EMPTY_SYNTAX_INDEX;
 }
 
-SyntaxIndex make_annotate_statement(SyntaxFactory *f, SyntaxIndex list, SyntaxIndex ident, Token *semi) {
+SyntaxIndex make_annotate_statement(SyntaxFactory *f, SyntaxIndex list) {
     debugf("make_annotate_statement\n");
     assert_node(f, list, "Attr List");
-    assert_node(f, ident, "Ident");
-    assert(f, semi, ";");
     AstAnnotateStatement *a = next_array_elem(&f->annotate_statements);
     a->attr_list = list;
-    a->ident = ident;
+    a->ident_list = init_array(sizeof(SyntaxIndex), 8);
     return (SyntaxIndex){f->annotate_statements.size};
+}
+SyntaxIndex add_ident_to_annotate(SyntaxFactory *f, SyntaxIndex annotate, SyntaxIndex ident) {
+    if (annotate.i) {
+        assert_node(f, ident, "Ident");
+        AstAnnotateStatement *a = get_ast_node(annotate, f->annotate_statements);
+        SyntaxIndex *i = next_array_elem(&a->ident_list);
+        i->i = ident.i;
+        return (SyntaxIndex){a->ident_list.size};
+    }
+    return EMPTY_SYNTAX_INDEX;
 }
 
 SyntaxIndex make_bind_anno_statement(SyntaxFactory *f,

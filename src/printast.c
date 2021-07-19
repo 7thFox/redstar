@@ -207,6 +207,7 @@ void print_binary_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
     case BIN_DIVIDE:     op = "/"; break;
     case BIN_EQUALS:     op = "=="; break;
     case BIN_NOT_EQUALS: op = "!="; break;
+    case BIN_MODULUS:    op = "MOD"; break;
     }
 
     printf("BIN EXP (%i) '%s'\n", i.i, op);
@@ -272,10 +273,13 @@ void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
     print_attr_list(f, a->attr_list);
     printf("\n");
 
-    printf("%.*s", (indent+1) * SPACE_PER_LEVEL, INDENT_CONST);
-    printf("IDENT: ");
-    print_ident(f, a->ident);
-    printf("\n");
+    printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("IDENTS:\n");
+    for (int i = 0; i < a->ident_list.size; i++) {
+        printf("%.*s", (indent + 2) * SPACE_PER_LEVEL, INDENT_CONST);
+        print_ident(f, ((SyntaxIndex*)a->ident_list.array)[i]);
+        printf("\n");
+    }
 }
 
 void print_bind_anno_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {

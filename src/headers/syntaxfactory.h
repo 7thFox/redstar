@@ -102,10 +102,10 @@ SyntaxIndex make_binary_expression(SyntaxFactory *factory, ExpressionIndex left,
 SyntaxIndex make_return_statement(SyntaxFactory *factory, Token *return_token, ExpressionIndex expression);
 SyntaxIndex make_local_decl(SyntaxFactory *factory, SyntaxIndex ident, Token *colon, SyntaxIndex type_opt, Token *equals_opt, ExpressionIndex expresion_opt, Token *semicolon);
 SyntaxIndex make_function_call(SyntaxFactory *factory, ExpressionIndex expression, Token *left, SyntaxIndex param_list_opt, Token *right);
-SyntaxIndex make_if_statement(SyntaxFactory *factory, Token *if_tok, Token *left, ExpressionIndex cond, Token *right, StatementIndex stmt);
+SyntaxIndex make_if_statement(SyntaxFactory *factory, Token *if_tok, Token *left, ExpressionIndex cond, Token *right, StatementIndex stmt, Token *else_opt, StatementIndex else_stmt_opt);
 SyntaxIndex make_literal_expression(SyntaxFactory *factory, Token *token);
 SyntaxIndex make_param_list(SyntaxFactory *factory);
-SyntaxIndex make_annotate_statement(SyntaxFactory *factory, SyntaxIndex list, SyntaxIndex ident, Token *semi);
+SyntaxIndex make_annotate_statement(SyntaxFactory *factory, SyntaxIndex attr_list);
 SyntaxIndex make_bind_anno_ordinals(SyntaxFactory *factory);
 SyntaxIndex make_bind_anno_statement(SyntaxFactory *factory,
     BindAnnoStatementKind kind,
@@ -120,5 +120,6 @@ SyntaxIndex add_param(SyntaxFactory *factory, SyntaxIndex list, ExpressionIndex 
 SyntaxIndex add_attr(SyntaxFactory *factory, SyntaxIndex attr_list, SyntaxIndex attr_elem);
 SyntaxIndex add_param_decl(SyntaxFactory *factory, SyntaxIndex param_list, SyntaxIndex param_decl);
 SyntaxIndex add_bind_anno_ordinal(SyntaxFactory *factory, SyntaxIndex ordinal_list, SyntaxIndex attr_list_opt);
+SyntaxIndex add_ident_to_annotate(SyntaxFactory *factory, SyntaxIndex annotate, SyntaxIndex ident);
 
 #endif

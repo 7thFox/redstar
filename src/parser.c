@@ -1,7 +1,7 @@
 #include "headers/parser.h"
 #define TRACE_PARSE 0
-// #define debugf(...) ;
-#define debugf(...) printf("  "); printf(__VA_ARGS__)
+#define debugf(...) ;
+// #define debugf(...) printf("  "); printf(__VA_ARGS__)
 
 typedef enum
 {
@@ -58,7 +58,6 @@ SyntaxIndex parse_parameter_list_decl(Parser *p);
 SyntaxIndex parse_ident(Parser *p);
 SyntaxIndex parse_type(Parser *p);
 SyntaxIndex parse_attr_list(Parser *p, bool allow_remove);
-SyntaxIndex parse_block(Parser *p);
 SyntaxIndex parse_return_statement(Parser *p);
 ExpressionIndex parse_expression(Parser *p, ExpressionPriority priority);
 ExpressionIndex parse_unary_expression(Parser *p);
@@ -139,7 +138,9 @@ Token *npeek_token(Parser *p, TokenType type, token_index n) {
 
 void parse_error(Parser *p, const char *msg) {
     Cursor c = p->factory->tokens[p->current].p0;
-    fprintf(stderr, "PARSE_ERROR in %s:%i:%i: %s\n", get_string(p->factory, p->factory->current_filepath), c.line, c.col, msg);
+    fprintf(stderr, "PARSE_ERROR in %s:%i:%i: %s\n",
+        get_string(p->factory, p->factory->current_filepath),
+        c.line, c.col, msg);
     p->has_error = true;
     error_common();
 }
@@ -332,14 +333,10 @@ ExpressionIndex parse_binary_expression(Parser *p, ExpressionIndex left, Express
     case '-': new_priority = EXP_SUBTRACT; break;
     case '*': new_priority = EXP_MULTIPLY; break;
     case '/': new_priority = EXP_DIVIDE; break;
+    case '%': new_priority = EXP_MOD; break;
 
     case TOK_NOT_EQUALS: new_priority = EXP_EQUALS; break;
     case TOK_EQUALITY:   new_priority = EXP_NOT_EQUALS; break;
-    case '%': new_priority = EXP_MOD; break;
-    // case TOK_OR: new_priority = EXP_ADD; break;
-    // case TOK_AND: new_priority = EXP_ADD; break;
-    // case '|': new_priority = EXP_ADD; break;
-    // case '&': new_priority = EXP_ADD; break;
     default:
         return (ExpressionIndex){0};
     }
@@ -480,8 +477,14 @@ SyntaxIndex parse_if_statement(Parser *p) {
         ExpressionIndex cond = parse_expression(p, EXP_ANY);
         Token *right = accept_token(p, ')');
         StatementIndex smt = parse_statement(p);
+        Token *else_tok;
+        StatementIndex else_stmt = (StatementIndex){0};
+        if ((else_tok = accept_token(p, TOK_ELSE))) {
+            else_stmt = parse_statement(p);
+        }
         return make_if_statement(p->factory,
-            if_tok, left, cond, right, smt);
+            if_tok, left, cond, right, smt,
+            else_tok, else_stmt);
     }
     return EMPTY_SYNTAX_INDEX;
 }
@@ -499,9 +502,17 @@ SyntaxIndex parse_annotate_statement(Parser *p) {
     debugf("parse_annotate_statement\n");
     SyntaxIndex list;
     if ((list = parse_attr_list(p, true)).i) {
+        SyntaxIndex anno = make_annotate_statement(p->factory, list);
         SyntaxIndex ident = parse_ident(p);
-        Token *semi = accept_token(p, ';');
-        return make_annotate_statement(p->factory, list, ident, semi);
+        add_ident_to_annotate(p->factory, anno, ident);
+        while (accept_token(p, ',')) {
+            ident = parse_ident(p);
+            add_ident_to_annotate(p->factory, anno, ident);
+        }
+        if (!accept_token(p, ';')) {
+            parse_error(p, "Expected ;");
+        }
+        return anno;
     }
     return EMPTY_SYNTAX_INDEX;
 }

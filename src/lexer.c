@@ -62,7 +62,6 @@ bool lex_ident_leading_statement(Lexer *l);
 bool lex_if_statement(Lexer *l);
 bool lex_else_statement(Lexer *l);
 bool lex_numeric_literal(Lexer *l);
-bool lex_annotate_expression(Lexer *l);
 bool lex_annotate_statement(Lexer *l);
 bool lex_bind_anno_func_statement(Lexer *l);
 bool lex_underscore(Lexer *l);
@@ -568,20 +567,12 @@ bool lex_numeric_literal(Lexer *l) {
 
 bool lex_annotate_statement(Lexer *l) {
     debugf("lex_anno_statement\n");
-    if (lex_annotate_expression(l)) {
-        required(l, try_lex_char_literal(l, ';'), ";");
-        return true;
-    }
-    return false;
-}
-
-bool lex_annotate_expression(Lexer *l) {
-    debugf("lex_anno_expression\n");
     if (lex_attr_list(l, true)) {
         required(l, lex_ident(l), "Variable Name Ident");
         while (try_lex_char_literal(l, ',')) {
             required(l, lex_ident(l), "Variable Name Ident");
         }
+        required(l, try_lex_char_literal(l, ';'), ";");
         return true;
     }
     return false;
