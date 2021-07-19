@@ -38,6 +38,11 @@ anno _ any [Insecure] => [Insecure]
 bind db_search none [Insecure] => _
 func db_search(x: string, y: string) string {}// just pretend this is more than it looks
 
+// or:
+attr Secure
+anno _ all [Secure] => [Secure]
+bind db_search all [Secure]
+
 // Here's what a typical func decl might look like:
 anno multiply all [NonZero] => [NonZero]
 anno multiply any [Even] => [Even]

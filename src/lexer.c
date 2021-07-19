@@ -147,7 +147,7 @@ static inline char peek(Lexer *l) {
 void start_token(Lexer *l) {
     // TODO: check buffer size and resize if needed
     l->token_buffer[l->token_count].p0.line = l->current.line;
-    l->token_buffer[l->token_count].p0.col = l->current.col;//  +1;
+    l->token_buffer[l->token_count].p0.col = l->current.col;
     l->token_buffer[l->token_count].p0.ind = l->current.ind + 1;
 }
 
@@ -155,16 +155,8 @@ void emit_token(Lexer *l, TokenType type) {
     debugf("--Emit: %i\n", type);
     l->token_buffer[l->token_count].type = type;
     l->token_buffer[l->token_count].p1.line = l->current.line;
-    l->token_buffer[l->token_count].p1.col = l->current.col;//  +1;
+    l->token_buffer[l->token_count].p1.col = l->current.col;
     l->token_buffer[l->token_count].p1.ind = l->current.ind + 1;
-
-    // TODO?
-    // switch (type)
-    // {
-    // case TOK_LITERAL:
-    //     l->token_buffer[l->token_count].literal_text = l->current;
-    //     break;
-    // }
     l->token_count++;
 }
 
@@ -335,10 +327,10 @@ bool lex_attr_def(Lexer *l) {
     debugf("lex_attr_def\n");
     if (try_lex_reserved_word(l, TOK_ATTR, "attr")) {
         lex_ident(l);
-        if (try_lex_char_literal(l, '{')) {
-            // TODO
-            required(l, try_lex_char_literal(l, '}'), "}");
-        }
+        // TODO: attr body?
+        // if (try_lex_char_literal(l, '{')) {
+        //     required(l, try_lex_char_literal(l, '}'), "}");
+        // }
         return true;
     }
     return false;

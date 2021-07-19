@@ -62,37 +62,37 @@ void print_statement(SyntaxFactory *f, StatementIndex stmt_ind, int indent) {
     if (!i.index.i) return;
 
     switch (i.kind) {
-    case AST_USE:
-        print_use(f, i.index, indent);
-        break;
-    case AST_ATTR_DECL:
-        print_attr_decl(f, i.index, indent);
-        break;
-    case AST_FUNC_DECL:
-        print_func_decl(f, i.index, indent);
-        break;
-    case AST_RETURN_STATEMENT:
-        print_return_statement(f, i.index, indent);
-        break;
-    case AST_LOCAL_DECL:
-        print_local_decl(f, i.index, indent);
-        break;
-    case AST_IF_STATEMENT:
-        print_if_statement(f, i.index, indent);
-        break;
-    case AST_BLOCK:
-        print_block(f, i.index, indent);
-        break;
-    case AST_ANNOTATE_LOCAL:
-        print_annotate_statement(f, i.index, indent);
-        break;
-    case AST_BIND_ANNO:
-        print_bind_anno_statement(f, i.index, indent);
-        break;
-    default:
-    case AST_COMPILATION_UNIT:
-        fprintf(stderr, "Unexpected statement ast type %i\n", i.kind);
-        break;
+        case AST_USE:
+            print_use(f, i.index, indent);
+            break;
+        case AST_ATTR_DECL:
+            print_attr_decl(f, i.index, indent);
+            break;
+        case AST_FUNC_DECL:
+            print_func_decl(f, i.index, indent);
+            break;
+        case AST_RETURN_STATEMENT:
+            print_return_statement(f, i.index, indent);
+            break;
+        case AST_LOCAL_DECL:
+            print_local_decl(f, i.index, indent);
+            break;
+        case AST_IF_STATEMENT:
+            print_if_statement(f, i.index, indent);
+            break;
+        case AST_BLOCK:
+            print_block(f, i.index, indent);
+            break;
+        case AST_ANNOTATE_LOCAL:
+            print_annotate_statement(f, i.index, indent);
+            break;
+        case AST_BIND_ANNO:
+            print_bind_anno_statement(f, i.index, indent);
+            break;
+        case AST_COMPILATION_UNIT:
+        default:
+            fprintf(stderr, "Unexpected statement ast type %i\n", i.kind);
+            break;
     }
 }
 
@@ -192,7 +192,6 @@ void print_expression(SyntaxFactory *f, ExpressionIndex i, int indent) {
         fprintf(stderr, "Unexpected expression type %i\n", index.kind);
         break;
     }
-    
 }
 
 void print_binary_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
@@ -246,7 +245,13 @@ void print_function_call(SyntaxFactory *f, SyntaxIndex i, int indent) {
 }
 
 void print_parameter_list(SyntaxFactory *f, SyntaxIndex i, int indent) {
-    // TODO
+    AstParamList *l = get_ast_node(i, f->param_list_decls);
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("PARAMS %i:\n", i.i);
+    for (int j = 0; j < l->param_expressions.size; j++) {
+        ExpressionIndex param = ((ExpressionIndex *)l->param_expressions.array)[j];
+        print_expression(f, param, indent + 1);
+    }
 }
 
 void print_if_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
@@ -283,47 +288,83 @@ void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
 }
 
 void print_bind_anno_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
-    // AstBindAnnoMap *m = get_ast_node(i, f->bind_anno_map);
-    // AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
-    // printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
-    // if (m->arr == &f->bind_func_statements || &f->bind_op_statements){
-    //     printf("BIND %i (%i): ", i.i, m->index.i);
-    // }
-    // else {
-    //     printf("ANNO SIG %i (%i): ", i.i, m->index.i);
-    // }
-    // if (s->func_target.i) {
-    //     print_ident(f, s->func_target);
-    // }
-    // else {
-    //     print_operation(f, s->op_target);
-    // }
-    // printf("\n");
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch"
+    AstBindAnnoMap *m = get_ast_node(i, f->bind_anno_map);
+    AstBindAnnoStatement *s = get_ast_node(m->index, (*m->arr));
+    printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
 
-    // printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
-    // printf("PARAMS:\n");
-    // for (int i = 0; i < s->parameters.size; i++){
-    //     printf("%.*s", (indent + 2) * SPACE_PER_LEVEL, INDENT_CONST);
-    //     printf("%i: ", i);
-    //     SyntaxIndex *list_index = get_ast_node(((SyntaxIndex){i + 1}), s->parameters);
-    //     if (list_index->i) {
-    //         print_attr_list(f, *list_index);
-    //     }
-    //     else {
-    //         printf("NONE");
-    //     }
-    //     printf("\n");
-    // }
+    switch (m->kind & 0x11)
+    {
+        case BAS_BIND:
+            printf("BIND");
+            break;
+        case BAS_ANNO:
+            printf("ANNO");
+            break;
+    }
+    printf(":\n");
 
-    // printf("%.*s", (indent + 1) * SPACE_PER_LEVEL, INDENT_CONST);
-    // printf("RETURN: ");
-    // if (s->return_def.i) {
-    //     print_attr_list(f, s->return_def);
-    // }
-    // else {
-    //     printf("NONE");
-    // }
-    // printf("\n");
+    printf("%.*s", (indent+1) * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("TARGET: ");
+    switch (m->kind & (0x111 << 2))
+    {
+        case BAS_TARGET_FUNC:
+            print_ident(f, s->func_target);
+            break;
+        case BAS_TARGET_OP:
+            printf("op ");
+            print_operation(f, s->op_target);
+            break;
+        case BAS_TARGET_WILD:
+            printf("WILD");
+            break;
+    }
+    printf("\n");
+
+    printf("%.*s", (indent+1) * SPACE_PER_LEVEL, INDENT_CONST);
+    printf("DEFS:\n");
+    switch (m->kind & (0x11 << 5))
+    {
+        case BAS_DEFS_ORDINAL:
+        {
+            AstBindAnnoOrdinals *ords = get_ast_node(s->ordinals, f->bind_anno_ordinals);
+            for (int j = 0; j < ords->ordinals.size; j++) {
+                printf("%.*s", (indent+2) * SPACE_PER_LEVEL, INDENT_CONST);
+                SyntaxIndex ordi = ((SyntaxIndex *)ords->ordinals.array)[j];
+                if (ordi.i) {
+                    print_attr_list(f, ordi);
+                }
+                else {
+                    printf("NONE");
+                }
+                printf("\n");
+            }
+        }
+            break;
+        case BAS_DEFS_WILD:
+            printf("%.*s", (indent+2) * SPACE_PER_LEVEL, INDENT_CONST);
+            switch (s->wildcard) {
+            case TOK_ANY:
+                printf("ANY");
+            case TOK_ALL:
+                printf("ALL");
+            case TOK_NONE:
+                printf("NONE");
+            }
+            printf(" ");
+            print_attr_list(f, s->wildcard_list);
+            printf("\n");
+            break;
+    }
+
+    if ((m->kind & BAS_RETURN) == BAS_RETURN) {
+        printf("%.*s", (indent+2) * SPACE_PER_LEVEL, INDENT_CONST);
+        printf("RETURN: ");
+        print_attr_list(f, s->return_def);
+        printf("\n");
+    }
+#pragma GCC diagnostic pop
 }
 
 void print_operation(SyntaxFactory *f, TokenType op) {

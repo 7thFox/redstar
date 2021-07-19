@@ -188,7 +188,7 @@ SyntaxIndex parse_attr_statement(Parser *p) {
         return make_attr_decl(p->factory,
             attr,
             ident,
-            EMPTY_SYNTAX_INDEX);// TODO
+            EMPTY_SYNTAX_INDEX);// TODO: attr body?
     }
     return EMPTY_SYNTAX_INDEX;
 }
