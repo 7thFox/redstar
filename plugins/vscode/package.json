@@ -1,0 +1,33 @@
+{
+    "name": "redstar-syntax",
+    "version": "0.0.1",
+    "publisher": "7thFox",
+    "engines": {
+        "vscode": "^1.22.0"
+    },
+    "displayName": "Redstar Syntax Highlighting",
+    "contributes": {
+        "languages": [
+            {
+                "id": "redstar",
+                "extensions": [
+                    ".red"
+                ]
+            }
+        ],
+        "grammars": [
+            {
+                "language": "redstar",
+                "scopeName": "source.redstar",
+                "path": "./syntaxes/redstar.tmLanguage.json"
+            }
+        ],
+        "themes": [
+            {
+                "uiTheme": "vs",
+                "id": "redstar.default",
+                "path": "./themes/default.tmTheme.json"
+            }
+        ]
+    }
+}

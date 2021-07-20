@@ -1,0 +1,15 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "scopeName": "source.redstar",
+    "patterns": [{ "include": "#keyword" }, { "include": "#attrlist" }],
+    "repository": {
+      "keyword": {
+        "match": "func|bind|anno|attr|use",
+        "name": "keyword"
+      },
+      "attrlist": {
+          "match": "\\[.+\\]",
+          "name": "attrlist"q
+      }
+    }
+  }
