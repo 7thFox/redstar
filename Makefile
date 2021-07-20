@@ -1,5 +1,5 @@
 debugparams = -printsymbols
-# debugparams = -printstrings -printtree
+# debugparams = -printstrings
 
 build-release:
 	@[[ -d bin ]] || mkdir bin
@@ -14,3 +14,6 @@ test1: build
 
 testanno: build
 	bin/redstar -debug $(debugparams) tests/testanno
+
+testscope: build
+	bin/redstar -debug $(debugparams) tests/testscope

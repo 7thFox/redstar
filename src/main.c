@@ -89,7 +89,7 @@ int parse_file(program_args args, const char* filePath, Parser *parser) {
 
 void post_parse(Parser *p, program_args args) {
     if (args.printstrings) {
-        #define PRINT_STRING_TABLE_ROW_SIZE 0x40
+#define PRINT_STRING_TABLE_ROW_SIZE 0x40
         for (int row = 0; row < p->factory->string_table.size; row += PRINT_STRING_TABLE_ROW_SIZE) {
             printf("0x%04x: ", row);
             for (int col = 0; row + col < p->factory->string_table.size && col < PRINT_STRING_TABLE_ROW_SIZE; col++)
@@ -112,5 +112,17 @@ void post_parse(Parser *p, program_args args) {
     debugf("Creating Symbol Table...");
     SymbolTable *st = create_symbol_table(p);
 
-    destroy_symbol_table(st);
+    for (int i = 0; i < p->factory->identifiers.size; i++) {
+        AstIdent *ident = ((AstIdent *)p->factory->identifiers.array) + i;
+        if (!ident->symbol.i) continue;
+        printf("IDENT %i => Symbol %i ('%s')\n",
+            i + 1,
+            ident->symbol.i,
+            get_string(p->factory->string_table, ident->name));
+    }
+        // for (int i = 0; i < st->nsymbols; i++) {
+        //     printf("%i: Scope %i StringIndex %i\n", i, st->symbols[i].decl_scope.i, st->symbols[i].name.i);
+        // }
+
+        destroy_symbol_table(st);
 }

@@ -246,6 +246,7 @@ SyntaxIndex make_ident(SyntaxFactory *f, Token *name) {
     AstIdent *ident = next_array_elem(&f->identifiers);
     ident->name = copy_token_string(f, name);
     ident->scope = f->current_scope;
+    ident->location = name->p0;
     return (SyntaxIndex){f->identifiers.size};
 }
 

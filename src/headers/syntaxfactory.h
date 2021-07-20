@@ -24,7 +24,6 @@ typedef struct {
 
     DynamicArray compilation_units;
     DynamicArray identifiers;
-    DynamicArray ident_references;
     DynamicArray types;
     DynamicArray param_list_decls;
     DynamicArray param_decls;

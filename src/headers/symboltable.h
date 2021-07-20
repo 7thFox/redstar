@@ -4,28 +4,27 @@
 #include "common.h"
 #include "parser.h"
 #include "darray.h"
-
-// typedef struct{uint16_t i} SymbolId;
-
-// typedef struct {
-//     // uint8_t hash;
-//     int collisions;
-// } STSymbolBucket;
-
-// typedef struct {
-//     StringIndex name;
-//     SymbolId    id;
-// } STSymbolBucketEntry;
+#include "syntaxindex.h"
 
 typedef struct {
     StringIndex name;
     ScopeId     decl_scope;
+    Cursor      decl_location;
 } STSymbol;
+
+typedef struct {
+    int count;
+    int offset;
+    ScopeId parent_id;
+} _scope_info;
 
 typedef struct
 {
     size_t nsymbols;
     STSymbol *symbols;
+
+    int      nscopes;
+    _scope_info *scope_info;
 } SymbolTable;
 
 SymbolTable *create_symbol_table(Parser *parser);

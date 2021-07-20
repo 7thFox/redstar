@@ -36,12 +36,6 @@ typedef struct {
 } AstBinaryOperationExpression;
 
 typedef struct {
-    // uint16_t    file_index;
-    uint32_t    line;// I swear to frick, if someone gets past these these, they deserve what they get.
-    uint16_t    col;
-} Location;
-
-typedef struct {
     SyntaxIndex ident;
     SyntaxIndex param_list_opt;
     SyntaxIndex return_type_opt;
@@ -74,6 +68,8 @@ typedef struct {
 typedef struct {
     StringIndex name;
     ScopeId     scope;
+    Cursor      location;
+    SymbolId    symbol;
 } AstIdent;
 
 typedef struct {
