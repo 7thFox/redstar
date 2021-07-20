@@ -7,10 +7,12 @@
 #include "lexer.h"
 #include "syntaxindex.h"
 #include "darray.h"
+#include "stringtable.h"
 
 typedef struct {
     const char  *current_text;
     StringIndex current_filepath;
+    StringTable string_table;
 
     // kinda hackish but I want that location...
     Token *tokens;
@@ -64,16 +66,8 @@ typedef struct {
     DynamicArray literal_expressions;
     DynamicArray function_calls;
 
-    char        *strings;
-    StringIndex strings_size;
-    StringIndex strings_capacity;// we're hitting 4GB allocations at this point so I'll pretend we can never hit the max
-#define STRINGS_MAX_GROW 1024
 } SyntaxFactory;
 
-// Helpers / Meta
-static inline const char *get_string(SyntaxFactory *f, StringIndex i){
-    return f->strings + i.i;
-}
 StatementIndex make_statement(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k);
 ExpressionIndex make_expression(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k);
 SyntaxFactory *make_astfactory();

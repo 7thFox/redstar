@@ -113,7 +113,7 @@ Token* accept_token(Parser *p, TokenType type) {
 #if TRACE_PARSE
     Cursor c = p->factory->tokens[next].p0;
     printf("    TRACE %s:%i:%i\n",
-        get_string(p->factory, p->factory->current_filepath), c.line, c.col);
+        get_string(p->factory->string_table, p->factory->current_filepath), c.line, c.col);
 #endif
     debugf("accept_token %i (%c) = %i (%c)?\n", (p->tokens[next].type), (p->tokens[next].type), type, type);
     Token *tok;
@@ -145,7 +145,7 @@ Token *npeek_token(Parser *p, TokenType type, token_index n) {
 void parse_error(Parser *p, const char *msg) {
     Cursor c = p->factory->tokens[p->current].p0;
     fprintf(stderr, "PARSE_ERROR in %s:%i:%i: %s\n",
-        get_string(p->factory, p->factory->current_filepath),
+        get_string(p->factory->string_table, p->factory->current_filepath),
         c.line, c.col, msg);
     p->has_error = true;
     error_common();

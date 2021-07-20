@@ -18,6 +18,7 @@ typedef struct {
     bool printlex;
     bool printtree;
     bool printsymbols;
+    bool printstrings;
 } program_args;
 
 bool parseArgs(int argc, char ** argv);

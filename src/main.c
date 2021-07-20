@@ -88,12 +88,29 @@ int parse_file(program_args args, const char* filePath, Parser *parser) {
 }
 
 void post_parse(Parser *p, program_args args) {
-        if (args.printtree) {
-            print_ast(p);
+    if (args.printstrings) {
+        #define PRINT_STRING_TABLE_ROW_SIZE 0x40
+        for (int row = 0; row < p->factory->string_table.size; row += PRINT_STRING_TABLE_ROW_SIZE) {
+            printf("0x%04x: ", row);
+            for (int col = 0; row + col < p->factory->string_table.size && col < PRINT_STRING_TABLE_ROW_SIZE; col++)
+            {
+                char c = p->factory->string_table.strings[row + col];
+                if (c == 0) {
+                    printf("\u25A1 ");
+                }
+                else {
+                    printf("%c ", c);
+                }
+            }
+            printf("\n");
         }
+    }
+    if (args.printtree) {
+        print_ast(p);
+    }
 
-        debugf("Creating Symbol Table...");
-        SymbolTable *st = create_symbol_table(p);
+    debugf("Creating Symbol Table...");
+    SymbolTable *st = create_symbol_table(p);
 
-        destroy_symbol_table(st);
+    destroy_symbol_table(st);
 }

@@ -4,13 +4,12 @@
 
 DynamicArray init_array(size_t elem_size, uint16_t cap);
 void *next_array_elem(DynamicArray *arr);
-StringIndex copy_string(SyntaxFactory *f, const char *str);
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok);
 void add_ident_to_decls(SyntaxFactory *f, SyntaxIndex ident);
 
 void factory_error(SyntaxFactory *f, const char *msg) {
     fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: %s\n",
-            get_string(f, f->current_filepath),
+            get_string(f->string_table, f->current_filepath),
             f->tokens[*(f->current_token) + 1].p0.line,
             f->tokens[*(f->current_token) + 1].p0.col,
             msg);
@@ -19,7 +18,7 @@ void factory_error(SyntaxFactory *f, const char *msg) {
 
 void factory_error_missing(SyntaxFactory *f, const char *missing) {
     fprintf(stderr, "SYNTAX_FACTORY_ERROR in %s:%i:%i: Missing: %s\n",
-            get_string(f, f->current_filepath),
+            get_string(f->string_table, f->current_filepath),
             f->tokens[*(f->current_token) + 1].p0.line,
             f->tokens[*(f->current_token) + 1].p0.col,
             missing);
@@ -45,6 +44,7 @@ SyntaxFactory *make_astfactory() {
     SyntaxFactory *f = malloc(sizeof(SyntaxFactory));
     f->current_text = 0;
     f->current_filepath = (StringIndex){0};
+    f->string_table = init_string_table();
 
     f->scopes = init_array(sizeof(STScope), 64);
     f->ident_decls = init_array(sizeof(SyntaxIndex), 32);
@@ -91,15 +91,13 @@ SyntaxFactory *make_astfactory() {
     f->literal_expressions = init_array(sizeof(AstLiteralExpression), 16);
     f->function_calls = init_array(sizeof(AstFunctionCall), 8);
 
-    f->strings_capacity.i = 2048;
-    f->strings_size.i = 0;
-    f->strings = malloc(sizeof(char) * f->strings_capacity.i);
-
     return f;
 }
 
 void destroy_astfactory(SyntaxFactory *f) {
     debugf("destroy_astfactory\n");
+    destroy_string_table(&f->string_table);
+
     for (int i = 0; i < f->param_list_decls.size; i++) {
         free(((AstParameterListDecl *)f->param_list_decls.array)[i].param_decls.array);
     }
@@ -184,38 +182,8 @@ void add_ident_to_decls(SyntaxFactory *f, SyntaxIndex ident) {
     i->i = ident.i;
 }
 
-StringIndex copy_string(SyntaxFactory *f, const char *str) {
-    size_t len = strlen(str) + 1;
-    if (f->strings_size.i + len > f->strings_capacity.i) {
-        StringIndex newcap = (StringIndex){f->strings_capacity.i < STRINGS_MAX_GROW
-            ? f->strings_capacity.i * 2
-            : f->strings_capacity.i + STRINGS_MAX_GROW};
-        f->strings_capacity = newcap;
-        f->strings = realloc(f->strings, sizeof(char) * f->strings_capacity.i);
-    }
-    StringIndex index = f->strings_size;
-    strcpy(f->strings + index.i, str);
-    f->strings[len - 1] = '\0';
-    f->strings_size.i += len;
-
-    return index;
-}
-
 StringIndex copy_token_string(SyntaxFactory *f, Token *tok) {
-    size_t len = tok->p1.ind - tok->p0.ind + 1;
-    if (f->strings_size.i + len > f->strings_capacity.i) {
-        StringIndex newcap = (StringIndex){f->strings_capacity.i < STRINGS_MAX_GROW
-            ? f->strings_capacity.i * 2
-            : f->strings_capacity.i + STRINGS_MAX_GROW};
-        f->strings_capacity = newcap;
-        f->strings = realloc(f->strings, sizeof(char) * f->strings_capacity.i);
-    }
-    StringIndex index = f->strings_size;
-    strncpy(f->strings + index.i, f->current_text + tok->p0.ind, len - 1);
-    f->strings[index.i + tok->p1.ind] = '\0';
-    f->strings_size.i += len;
-
-    return index;
+    return copy_string(&f->string_table, f->current_text + tok->p0.ind, tok->p1.ind - tok->p0.ind);
 }
 
 StatementIndex make_statement(SyntaxFactory *f, SyntaxIndex i, SyntaxKind k) {
@@ -241,7 +209,7 @@ SyntaxIndex make_compilation_unit(SyntaxFactory *f, LexResult *lex, const char *
     // TODO: Search for referenced comp unit first
     f->current_text = lex->text;
     AstCompilationUnit *unit = next_array_elem(&(f->compilation_units));
-    unit->filepath = copy_string(f, file_path);
+    unit->filepath = copy_string(&f->string_table, file_path, strlen(file_path));
     unit->block = make_block(f);
     return (SyntaxIndex){f->compilation_units.size};
 }

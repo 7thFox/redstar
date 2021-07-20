@@ -36,12 +36,12 @@ void print_ast(Parser *p) {
 
 void print_ident(SyntaxFactory *f, SyntaxIndex i) {
     AstIdent *ident = get_ast_node(i, f->identifiers);
-    printf("'%s' (%i)", get_string(f, ident->name), i.i);
+    printf("'%s' (%i)", get_string(f->string_table, ident->name), i.i);
 }
 
 void print_unit(SyntaxFactory *f, SyntaxIndex i) {
     AstCompilationUnit *unit = get_ast_node(i, f->compilation_units);
-    printf("COMPILATION UNIT: '%s'\n", get_string(f, unit->filepath));
+    printf("COMPILATION UNIT: '%s'\n", get_string(f->string_table, unit->filepath));
     print_block(f, unit->block, 0);
 }
 
@@ -265,7 +265,7 @@ void print_if_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
 void print_literal_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
     AstLiteralExpression *lit = get_ast_node(i, f->literal_expressions);
     printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
-    printf("LITERAL %i: %s\n", i.i, get_string(f, lit->string_value));
+    printf("LITERAL %i: %s\n", i.i, get_string(f->string_table, lit->string_value));
 }
 
 void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {

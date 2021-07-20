@@ -4,6 +4,7 @@
 #include "syntaxfactory.h"
 #include "parser.h"
 #include "ast.h"
+#include "stringtable.h"
 
 void print_ast(Parser *p);
 

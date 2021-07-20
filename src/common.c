@@ -48,6 +48,9 @@ bool parseArgs(int argc, char ** argv){
         else if (strcmp(argv[i], "-printsymbols") == 0) {
             _args.printsymbols = true;
         }
+        else if (strcmp(argv[i], "-printstrings") == 0) {
+            _args.printstrings = true;
+        }
         else {
             if (i != argc - 1) return false;
 

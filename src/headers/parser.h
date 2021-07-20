@@ -4,6 +4,7 @@
 #include "common.h"
 #include "syntaxfactory.h"
 #include "lexer.h"
+#include "stringtable.h"
 
 typedef struct {
     SyntaxFactory *factory;

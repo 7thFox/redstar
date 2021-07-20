@@ -1,4 +1,5 @@
-debugparams = -printsymbols
+# debugparams = -printsymbols
+debugparams = -printstrings
 
 build-release:
 	@[[ -d bin ]] || mkdir bin
