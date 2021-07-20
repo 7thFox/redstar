@@ -265,7 +265,16 @@ void print_if_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {
 void print_literal_expression(SyntaxFactory *f, SyntaxIndex i, int indent) {
     AstLiteralExpression *lit = get_ast_node(i, f->literal_expressions);
     printf("%.*s", indent * SPACE_PER_LEVEL, INDENT_CONST);
-    printf("LITERAL %i: %s\n", i.i, get_string(f->string_table, lit->string_value));
+    printf("LITERAL %i: ", i.i);
+    switch (lit->type) {
+        case TOK_NUMERIC_LITERAL:
+            printf("NUMBER %li", lit->int_value);
+            break;
+        default:
+            fprintf(stderr, "Unexpected literal type\n");
+    }
+    //get_string(f->string_table, lit->string_value)
+    printf("\n");
 }
 
 void print_annotate_statement(SyntaxFactory *f, SyntaxIndex i, int indent) {

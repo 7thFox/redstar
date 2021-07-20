@@ -112,7 +112,10 @@ typedef struct {
 
 typedef struct {
     TokenType type;
-    StringIndex string_value;
+    union {
+        StringIndex string_value;
+        int64_t    int_value;
+    };
 } AstLiteralExpression;
 
 typedef struct {

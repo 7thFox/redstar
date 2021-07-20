@@ -458,8 +458,19 @@ SyntaxIndex make_literal_expression(SyntaxFactory *f, Token *token) {
     debugf("make_literal_expression\n");
     assert(f, token, "Literal Value");
     AstLiteralExpression *lit = next_array_elem(&f->literal_expressions);
-    lit->string_value = copy_token_string(f, token);
     lit->type = token->type;
+    switch (token->type) {
+        case TOK_NUMERIC_LITERAL:// TODO: float v int
+        {
+            char buff[21];
+            strncpy(buff, f->current_text + token->p0.ind, token->p1.ind - token->p0.ind);
+            lit->int_value = atol(buff);
+            break;
+        }
+        default:
+            factory_error(f, "Unexpected literal type");
+        }
+    // lit->string_value = copy_token_string(f, token);
     return (SyntaxIndex){f->literal_expressions.size};
 }
 
