@@ -41,7 +41,7 @@
             }
         },
         "annotate-statement": {
-            "begin": "\\[.+\\]",
+            "begin": "\\[[^\\]]+\\]",
             "beginCaptures": {
                 "0": { "patterns": [ { "include": "#attrlist" } ] }
             },
@@ -71,7 +71,7 @@
             "name": "keyword.control.redstar.else"
         },
         "return-statement": {
-            "match": "(return)(.+?);",
+            "match": "(return)([^;]+?);",
             "captures": {
                 "1": { "name": "keyword.control.redstar.return" },
                 "2": { "patterns": [ { "include": "#expression" } ] }
