@@ -15,6 +15,7 @@
             "patterns": [
                 { "include": "#func-decl" },
                 { "include": "#bind-anno-decl" },
+                { "include": "#use-statement" },
                 { "include": "#attr-decl" },
                 { "include": "#if-statement" },
                 { "include": "#else-statement" },
@@ -31,6 +32,13 @@
                 { "include": "#func-call" },
                 { "include": "#ident" }
             ]
+        },
+        "use-statement": {
+            "match": "(use)\\s+(.+?)(?:\\s|$|\\/\\/)",
+            "captures": {
+                "1": { "name": "keyword.other.redstar.use" },
+                "2": { "name": "string.unquoted.redstar.usepath" }
+            }
         },
         "annotate-statement": {
             "begin": "\\[.+\\]",
