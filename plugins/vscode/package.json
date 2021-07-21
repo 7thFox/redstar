@@ -21,13 +21,6 @@
                 "scopeName": "source.redstar",
                 "path": "./syntaxes/redstar.tmLanguage.json"
             }
-        ],
-        "themes": [
-            {
-                "uiTheme": "vs",
-                "id": "redstar.default",
-                "path": "./themes/default.tmTheme.json"
-            }
         ]
     }
 }

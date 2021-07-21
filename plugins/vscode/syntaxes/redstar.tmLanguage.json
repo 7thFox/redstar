@@ -2,42 +2,201 @@
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "scopeName": "source.redstar",
     "patterns": [
-        { "include": "#linecomment" },
+        { "comment": "ident : ([a-zA-Z_][a-zA-Z0-9_]*)"},
+        { "include": "#line-comment" },
         { "include": "#statement" }
     ],
     "repository": {
-        "linecomment": {
+        "line-comment": {
             "match": "\\/\\/.*",
             "name": "comment.line.double-slash"
         },
         "statement": {
             "patterns": [
-                { "include": "#func-decl" }
+                { "include": "#func-decl" },
+                { "include": "#bind-anno-decl" },
+                { "include": "#attr-decl" },
+                { "include": "#if-statement" },
+                { "include": "#else-statement" },
+                { "include": "#return-statement" },
+                { "include": "#annotate-statement" },
+                { "include": "#local-decl" }
+            ]
+        },
+        "expression": {
+            "patterns": [
+                { "include": "#literal-number" },
+                { "include": "#literal-binary" },
+                { "include": "#literal-hex" },
+                { "include": "#func-call" },
+                { "include": "#ident" }
+            ]
+        },
+        "annotate-statement": {
+            "begin": "\\[.+\\]",
+            "beginCaptures": {
+                "0": { "patterns": [ { "include": "#attrlist" } ] }
+            },
+            "patterns": [
+                {
+                    "match": "(.+?),",
+                    "captures": {
+                        "1": { "patterns": [ { "include": "#ident" } ] }
+                    }
+                }
+            ],
+            "end": "(.+);",
+            "endCaptures": {
+                "1": { "patterns": [ { "include": "#ident" } ] }
+            }
+        },
+        "if-statement": {
+            "begin": "(if)\\s*\\(",
+            "beginCaptures": { "1": { "name": "keyword.control.redstar.if" } },
+            "patterns": [
+                { "include": "#expression" }
+            ],
+            "end": "\\)"
+        },
+        "else-statement": {
+            "match": "else",
+            "name": "keyword.control.redstar.else"
+        },
+        "return-statement": {
+            "match": "(return)(.+?);",
+            "captures": {
+                "1": { "name": "keyword.control.redstar.return" },
+                "2": { "patterns": [ { "include": "#expression" } ] }
+            }
+        },
+        "func-call":{
+            "begin": "([a-zA-Z_][a-zA-Z0-9_]*)\\(",
+            "captures": { "1": { "name": "entity.name.function.redstar.call" } },
+            "patterns": [
+                { "include": "#expression" }
+            ],
+            "end": "\\)"
+        },
+        "ident": {
+            "match": "([a-zA-Z_][a-zA-Z0-9_]*)",
+            "name": "variable.name"
+        },
+        "attr-decl": {
+            "match": "(attr)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
+            "captures": {
+                "1": { "name": "keyword.other.redstar.attrdecl" },
+                "2": { "name": "entity.name.tag.redstar.attr" }
+            }
+        },
+        "typename":
+        {
+            "match": "([a-zA-Z_][a-zA-Z0-9_]*)",
+            "name": "entity.name.type"
+        },
+        "attrlist": {
+            "begin": "\\[",
+            "end": "([a-zA-Z_][a-zA-Z0-9_]*)\\]",
+            "endCaptures": { "1": { "name": "entity.name.tag.redstar.attr" } },
+            "patterns": [
+                {
+                    "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*,",
+                    "captures": { "1": { "name": "entity.name.tag.redstar.attr" } }
+                }
+            ]
+        },
+        "attrlist-opt": {
+            "patterns": [
+                { "include": "#attrlist" },
+                {
+                    "match": "_",
+                    "name": "keyword.other.redstar.ignore"
+                }
             ]
         },
         "func-decl": {
-            "begin": "(func)\\s+([a-zA-Z_][a-zA-Z0-9_]+)\\(",
+            "begin": "(func)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\(",
             "beginCaptures": {
                 "1": { "name":"keyword.other" },
                 "2": { "name": "entity.name.function" }
             },
             "patterns": [
                 {
-                    "match": "([a-zA-Z_][a-zA-Z0-9_]+)\\s*:\\s*([a-zA-Z_][a-zA-Z0-9_]+)",
+                    "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*:\\s*([a-zA-Z_][a-zA-Z0-9_]*),?",
                     "captures": {
-                        "1":{
-                            "name": "variable.parameter"
-                        },
-                        "2": {
-                            "name":"entity.name.type"
-                        }
+                        "1": { "name": "variable.parameter" },
+                        "2": { "name":"entity.name.type" }
                     }
                 }
             ],
-            "end": "\\)\\s*([a-zA-Z_][a-zA-Z0-9_]+)?",
+            "end": "\\)\\s*([a-zA-Z_][a-zA-Z0-9_]*)?",
             "endCaptures": {
                 "1": { "name": "entity.name.type" }
             }
+        },
+        "bind-anno-decl": {
+            "begin": "(bind|anno)\\s+(?:([a-zA-Z_][a-zA-Z0-9_]*)|(_)|(&&|\\|\\||[+\\-*\\/%&|]))",
+            "beginCaptures": {
+                "1": { "name": "keyword.other.redstar.bindanno" },
+                "2": { "name": "entity.name.function.redstar.bound" },
+                "3": { "name": "keyword.other.redstar.bindall" },
+                "4": { "name": "keyword.operator.redstar.bound" }
+            },
+            "end": "(.+?)(?:(=>)\\s+(.+))?((\\/\\/.+)|$)",
+            "endCaptures": {
+                "1": {
+                    "patterns": [
+                        {
+                            "match": "(any|all|none)(.+)",
+                            "captures": {
+                                "1": { "name": "keyword.other.redstar.wildbind" },
+                                "2": {
+                                    "patterns": [
+                                        {
+                                            "include": "#attrlist"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "include": "#attrlist-opt"
+                        }
+                    ]
+                },
+                "2": { "name": "keyword.other.redstar.arrow" },
+                "3": {
+                    "patterns": [
+                        {
+                            "include": "#attrlist-opt"
+                        }
+                    ]
+                },
+                "4": { "name":"comment.line.double-slash" }
+            }
+        },
+        "local-decl": {
+            "begin": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*:\\s*(\\[[^\\]]+\\]\\s*)?([^=;]*)=?",
+            "captures": {
+                "1": { "patterns": [ { "include": "#ident"} ] },
+                "2": { "patterns": [ { "include": "#attrlist"} ] },
+                "3": { "patterns": [ { "include": "#typename"} ] }
+            },
+            "patterns": [
+                { "include": "#expression" }
+            ],
+            "end": ";"
+        },
+        "literal-number": {
+            "match": "-?[1-9]\\d*(?:\\.\\d*)?(?:[eE]-?\\d+)?",
+            "name": "constant.numeric"
+        },
+        "literal-binary": {
+            "match": "0b[01]+",
+            "name": "constant.numeric"
+        },
+        "literal-hex": {
+            "match": "0x[0-9A-F]+",
+            "name": "constant.numeric"
         }
     }
 }
