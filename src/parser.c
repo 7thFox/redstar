@@ -5,7 +5,6 @@
 
 typedef enum
 {
-
     // just_parsed_priority < previously_parse_priority : don't recurse
     // or
     // previously_parse_priority >= just_parsed_priority : recurse
@@ -22,7 +21,6 @@ typedef enum
     EXP_SUBTRACT = 400,
 
     EXP_ANY = -9999,
-
 }
 ExpressionPriority;
 

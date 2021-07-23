@@ -23,6 +23,7 @@ typedef enum {
     TOK_GREATER_EQUALS,
     TOK_AND,// 270
     TOK_OR,
+    TOK_STRING_LITERAL,
     TOK_NUMERIC_LITERAL,
     TOK_BIND,
     TOK_ANNOTATE,
@@ -30,6 +31,7 @@ typedef enum {
     TOK_ANY,
     TOK_ALL,
     TOK_NONE,
+    // 280
 
     LEX_ERROR = -99,
 } TokenType;
