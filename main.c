@@ -20,8 +20,6 @@ int main(int argc, char ** argv) {
 
     }
 
-    getchar();
-
     program_args args = get_args();
 
     DIR *dr;
@@ -111,20 +109,21 @@ void post_parse(Parser *p, program_args args) {
         print_ast(p);
     }
 
-    debugf("Creating Symbol Table...");
+    debugf("Creating Symbol Table...\n");
     SymbolTable *st = create_symbol_table(p);
 
-    for (int i = 0; i < p->factory->identifiers.size; i++) {
-        AstIdent *ident = ((AstIdent *)p->factory->identifiers.array) + i;
-        if (!ident->symbol.i) continue;
-        printf("IDENT %i => Symbol %i ('%s')\n",
-            i + 1,
-            ident->symbol.i,
-            get_string(p->factory->string_table, ident->name));
+    if (args.printsymbols){
+        for (int i = 0; i < p->factory->identifiers.size; i++) {
+            AstIdent *ident = ((AstIdent *)p->factory->identifiers.array) + i;
+            if (!ident->symbol.i) continue;
+            printf("IDENT %i => Symbol %i ('%s')\n",
+                i + 1,
+                ident->symbol.i,
+                get_string(p->factory->string_table, ident->name));
+        }
+            // for (int i = 0; i < st->nsymbols; i++) {
+            //     printf("%i: Scope %i StringIndex %i\n", i, st->symbols[i].decl_scope.i, st->symbols[i].name.i);
+            // }
     }
-        // for (int i = 0; i < st->nsymbols; i++) {
-        //     printf("%i: Scope %i StringIndex %i\n", i, st->symbols[i].decl_scope.i, st->symbols[i].name.i);
-        // }
-
         destroy_symbol_table(st);
 }

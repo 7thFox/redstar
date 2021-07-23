@@ -78,13 +78,21 @@ void set_ident_symbol_ids(SymbolTable *st, Parser *p) {
             for (int j = 0; j < info.count; j++) {
                 StringIndex si = st->symbols[info.offset + j].name;
                 if (si.i == ident->name.i) {
-                    ident->symbol = (SymbolId){info.offset + j + 1};
-                    goto ident_set;
+                    if (!ident->symbol.i){
+                        ident->symbol = (SymbolId){info.offset + j + 1};
+                    }
+                    else {
+                        Cursor c = ident->location;
+                        fprintf(stderr, "SYMBOL_ERROR in %s:%i:%i: %s is redefined.\n",
+                                get_string(p->factory->string_table, p->factory->current_filepath),
+                                c.line, c.col, get_string(p->factory->string_table, si));
+                        st->has_error = true;
+                        error_common();
+                    }
                 }
             }
 
                 scope = info.parent_id;
         }
-    ident_set:;
     }
 }
