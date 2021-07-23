@@ -22,5 +22,6 @@ typedef struct {
 } program_args;
 
 bool parseArgs(int argc, char ** argv);
+void set_args_tests(program_args args);
 program_args get_args();
 #endif

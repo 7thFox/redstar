@@ -1,8 +1,8 @@
-#include "headers/common.h"
-#include "headers/lexer.h"
-#include "headers/parser.h"
-#include "headers/printast.h"
-#include "headers/symboltable.h"
+#include "src/headers/common.h"
+#include "src/headers/lexer.h"
+#include "src/headers/parser.h"
+#include "src/headers/printast.h"
+#include "src/headers/symboltable.h"
 
 #include "dirent.h"
 #include "stdio.h"
@@ -19,6 +19,8 @@ int main(int argc, char ** argv) {
         return 1;
 
     }
+
+    getchar();
 
     program_args args = get_args();
 

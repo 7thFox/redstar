@@ -27,6 +27,7 @@ void error_common() {
 
 program_args _args;
 program_args get_args() { return _args; }
+void set_args_tests(program_args args) { _args = args; }
 
 bool parseArgs(int argc, char ** argv){
     memset(&_args, 0, sizeof(program_args));

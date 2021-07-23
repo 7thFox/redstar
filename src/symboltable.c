@@ -8,6 +8,7 @@ SymbolTable *create_symbol_table(Parser *parser) {
     st->nsymbols = 0;
     st->symbols = 0;
     st->scope_info = 0;
+    st->has_error = false;
 
     make_ident_symbols(st, parser);
     set_ident_symbol_ids(st, parser);
@@ -20,7 +21,6 @@ void destroy_symbol_table(SymbolTable *st) {
     if (st->scope_info) free(st->scope_info);
     free(st);
 }
-
 
 void make_ident_symbols(SymbolTable *st, Parser *p) {
     st->nsymbols = p->factory->ident_decls.size;

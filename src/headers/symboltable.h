@@ -20,6 +20,8 @@ typedef struct {
 
 typedef struct
 {
+    bool has_error;
+
     size_t nsymbols;
     STSymbol *symbols;
 

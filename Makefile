@@ -1,19 +1,25 @@
+.PHONY: test
 debugparams = -printsymbols
 # debugparams = -printstrings
 
 build-release:
 	@[[ -d bin ]] || mkdir bin
-	gcc src/*.c -Wall -pedantic-errors -D _DEFAULT_SOURCE -o bin/redstar
+	gcc main.c src/*.c -Wall -pedantic-errors -D _DEFAULT_SOURCE -o bin/redstar
 
 build:
 	@[[ -d bin ]] || mkdir bin
-	gcc src/*.c -Wall -rdynamic -pedantic-errors -D _DEFAULT_SOURCE -o bin/redstar
+	gcc main.c src/*.c -Wall -rdynamic -pedantic-errors -D _DEFAULT_SOURCE -o bin/redstar
 
-test1: build
-	bin/redstar -debug $(debugparams) tests/test1
+test:
+	@[[ -d bin ]] || mkdir bin
+	gcc test/main.c src/*.c -Wall -rdynamic -pedantic-errors -D _DEFAULT_SOURCE -o bin/redstar-test
+	bin/redstar-test 2> /dev/null
 
-testanno: build
-	bin/redstar -debug $(debugparams) tests/testanno
+# test1: build
+# 	bin/redstar -debug $(debugparams) tests/test1
 
-testscope: build
-	bin/redstar -debug $(debugparams) tests/testscope
+# testanno: build
+# 	bin/redstar -debug $(debugparams) tests/testanno
+
+# testscope: build
+# 	bin/redstar -debug $(debugparams) tests/testscope
