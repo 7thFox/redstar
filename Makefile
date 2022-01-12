@@ -8,6 +8,9 @@ rebuild: grammar
 testanno: build
 	dotnet run --project src/ -- examples/testanno/main.red
 
+testscope: build
+	dotnet run --project src/ -- examples/testscope/main.red
+
 grammar:
 	rm -rf src/parser
 	antlr4 \

@@ -1,5 +1,7 @@
 grammar Redstar;
 
+start : statement* ;
+
 statement
     : attrDecl
     | bindDecl
@@ -41,11 +43,7 @@ ifStmt : 'if' exp body ( 'else' 'if' exp body )* ( 'else' body)?;
 attrAppl : '[' '-'? ident ( ',' '-' ? ident )* ']' ident ( ',' ident)*;
 
 exp
-    : '(' varDefine ')'
-    | funcCall
-    | binaryExp
-    | '(' exp ')'
-    | ident
+    : binaryExp
     | term
     ;
 
@@ -59,8 +57,10 @@ returnStmt : 'return' exp ;
 
 binaryExp : term op exp ;
 term
-    : ident
-    | literal
+    : literal
+    | '(' varDefine ')'
+    | funcCall
+    | ident
     | '(' exp ')'
     ;
 
