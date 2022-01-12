@@ -11,6 +11,7 @@ statement
     | varDefine ';'
     | funcCall ';'
     | attrAppl ';'
+    | returnStmt ';'
     ;
 
 attrDecl : 'attr' ident ;
@@ -25,13 +26,13 @@ bindAnnoConstraint
     ;
 bindAnnoLists : bindAnnoAttrList ( ',' bindAnnoAttrList )* ;
 bindAnnoAttrList
-    : '[' ident ( ',' ident )* ']'
+    : attrList
     | '_'
     ;
 
 funcDecl : 'func' ident '(' funcParameters? ')' funcReturn? body ;
 funcParameters : funcParameter ( ',' funcParameter)* ;
-funcParameter : typename ':' ident ;
+funcParameter : ident ':' typename ;
 funcReturn : typename ( ',' typename )* ;
 body : '{' statement* '}';
 
@@ -44,12 +45,17 @@ exp
     | funcCall
     | binaryExp
     | '(' exp ')'
+    | ident
+    | term
     ;
 
-varDefine : ident ':=' exp ;
+varDefine : ident ':' ( attrList? typename )? '=' exp ;
+attrList : '[' ident ( ',' ident )* ']' ;
 
 funcCall : ident '(' operands? ')' ;
 operands : exp ( ',' exp )* ;
+
+returnStmt : 'return' exp ;
 
 binaryExp : term op exp ;
 term
@@ -68,12 +74,16 @@ literalDecimal
     : INT '.' INT ( 'e' '-'? INT )?
     | '(' '-' INT  '.' INT ( 'e' '-'? INT )? ')' ;
 
-typename : 'int' | 'string' ident ;
+typename
+    : 'int'
+    | 'string'
+    | ident
+    ;
 ident : IDENT ;
 op : OP ;
 
+
 INT : [0-9]+ ;
-PATH_PART : [a-z] [a-z0-9] * ;
 OP
     : '<<='
     | '>>='
@@ -96,11 +106,12 @@ OP
     ;
 IDENT
     : [a-zA-Z] [a-zA-Z0-9_] *
-    | '_' [a-zA-Z0-9_] +;
+    | '_' [a-zA-Z0-9_] + // dis-allows _ as an ident
+    ;
 
 WS
-   : [ \t\n\r] + -> skip
-   ;
+    : [ \t\n\r] + -> skip
+    ;
 COMMENT
     : '//' .*? '\n' -> skip
     ;

@@ -1,10 +1,19 @@
-build: grammar
-	cd src && \
-		go build -o bin/redstar main.go
+build:
+	dotnet build src/
+
+rebuild: grammar
+	dotnet clean
+	dotnet build src/
 
 testanno: build
-	src/bin/redstar examples/testanno/main.red
+	dotnet run --project src/ -- examples/testanno/main.red
 
 grammar:
 	rm -rf src/parser
-	antlr4 -Dlanguage=Go -Xexact-output-dir -o src/parser src/Redstar.g4
+	antlr4 \
+		-Dlanguage=CSharp \
+		-Xexact-output-dir \
+		-o src/parser \
+		-visitor \
+		-package Redstar.Parser \
+		src/Redstar.g4

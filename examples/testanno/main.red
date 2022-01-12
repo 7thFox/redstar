@@ -25,7 +25,7 @@ anno / [NonZero], [NonZero] => [NonZero]
 // there are some short-hands to avoid specifying each parameter annotation
 // individually: any, all, and none. They work as one would expect and may not be
 // combined with specifying them by position.
-attr Even;
+attr Even
 anno * any [Even] => [Even]
 
 attr Odd
