@@ -1,5 +1,3 @@
-use core/rand
-
 attr NonZero
 
 // require denom to be annotated with [NonZero]
