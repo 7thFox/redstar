@@ -61,6 +61,7 @@ bool lex_binary_operation(Lexer *l);
 bool lex_ident_leading_statement(Lexer *l);
 bool lex_if_statement(Lexer *l);
 bool lex_else_statement(Lexer *l);
+bool lex_string_literal(Lexer *l);
 bool lex_numeric_literal(Lexer *l);
 bool lex_annotate_statement(Lexer *l);
 bool lex_bind_anno_func_statement(Lexer *l);
@@ -113,6 +114,7 @@ static inline bool is_numeric(char c) { return c >= 48 && c <= 57; }
 static inline bool is_valid_use_path_char(char c) { return is_alpha(c) || is_numeric(c) || c == '-' || c == '_' || c == '/'; }
 static inline bool is_ident_start_char(char c) { return is_alpha(c) || c == '_'; }
 static inline bool is_ident_char(char c) { return is_ident_start_char(c) || is_numeric(c); }
+static inline bool is_hex_digit(char c) { return is_numeric(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
 
 bool read(Lexer *l) {
     l->current.ind++;
@@ -424,6 +426,7 @@ bool lex_expression(Lexer *l) {
     while (lex_unary_operation(l));
 
     if (lex_numeric_literal(l) ||
+        lex_string_literal(l) ||
         lex_ident(l)) {
         while (lex_unary_operation(l) || lex_func_call(l));
 
@@ -601,4 +604,18 @@ bool lex_bind_anno_func_statement(Lexer *l) {
 
 bool lex_underscore(Lexer *l) {
     return try_lex_char_literal(l, '_');
+}
+
+bool lex_string_literal(Lexer *l) {
+    if (peek(l) == '"') {
+        start_token(l);
+        read(l);
+
+        while (peek(l) != '"') read(l);
+        read(l);// trailing "
+        emit_token(l, TOK_STRING_LITERAL);
+        eat_whitespace(l);
+        return true;
+    }
+    return false;
 }

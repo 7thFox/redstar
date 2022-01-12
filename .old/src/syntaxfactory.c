@@ -468,6 +468,65 @@ SyntaxIndex make_literal_expression(SyntaxFactory *f, Token *token) {
             lit->int_value = atol(buff);
             break;
         }
+        case TOK_STRING_LITERAL:
+        {
+            int len = token->p1.ind - token->p0.ind - 2;
+            char *val = malloc(sizeof(char) * len);
+
+            int val_i = 0;
+            char c;
+            int offset = token->p0.ind + 1;
+            for (int i = 0; i < len; i++) {
+                c = f->current_text + offset + i;
+                if (c != '\\') {
+                    val[val_i] = c;
+                    val_i++;
+                }
+                else {
+                    i++; 
+                }
+            }
+                while ((c = peek(l)) != '"')
+                {
+                    read(l);
+                    if (c == '\\')
+                    {
+                        c = peek(l);
+                        read(l);
+                        switch (c)
+                        {
+                        case 'n':
+                        case '\\':
+                        case 'r':
+                        case '\n':
+                            break;
+                        case 'u':
+                            if (!is_numeric(peek(l))) lex_error(l, "Invalid character code");
+                            read(l);
+                            if (!is_numeric(peek(l))) lex_error(l, "Invalid character code");
+                            read(l);
+                            // fallthrough
+                        case 'x':
+                            if (!is_numeric(peek(l))) lex_error(l, "Invalid character code");
+                            read(l);
+                            if (!is_numeric(peek(l))) lex_error(l, "Invalid character code");
+                            read(l);
+                            break;
+                        case '\r':// windows line endings
+                            if (peek(l) == '\n') {
+                                read(l);
+                                break;
+                            }
+                            // fallthrough
+                        default:
+                            lex_error(l, "Unrecognized string escape sequence");
+                            break;
+                    }
+                }
+            }
+
+            break;
+        }
         default:
             factory_error(f, "Unexpected literal type");
         }

@@ -513,7 +513,8 @@ SyntaxIndex parse_if_statement(Parser *p) {
 SyntaxIndex parse_literal_expression(Parser *p) {
     debugf("parse_literal_expression\n");
     Token *tok;
-    if ((tok = accept_token(p, TOK_NUMERIC_LITERAL))) {
+    if ((tok = accept_token(p, TOK_NUMERIC_LITERAL)) ||
+        (tok = accept_token(p, TOK_STRING_LITERAL))) {
         return make_literal_expression(p->factory, tok);
     }
     return EMPTY_SYNTAX_INDEX;
