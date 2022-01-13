@@ -2,6 +2,8 @@
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Redstar;
+using Redstar.Internal;
+using Redstar.Internal.Listener;
 using Redstar.Parser;
 
 var path = args.Length > 0
@@ -16,6 +18,8 @@ var parser = new RedstarParser(tokens);
 parser.BuildParseTree = true;
 
 var tree = parser.start();
-
-tree.Accept(new ScopeVisitor());
-//ParseTreeWalker.Default.Walk(, tree);
+var symbolTable = new SymbolTable();
+var buildProcess = new MultiListener();
+buildProcess.Listeners.Add(new ScopeListener(symbolTable));
+buildProcess.Listeners.Add(new IdentifierListener(symbolTable));
+buildProcess.EnterEveryRule(tree);

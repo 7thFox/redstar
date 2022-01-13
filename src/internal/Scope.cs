@@ -1,44 +1,42 @@
 using System;
-using Redstar.Parser;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using Redstar.Parser;
 
-namespace Redstar
+namespace Redstar.Internal
 {
     public class Scope
     {
-        public static long _lastScopeID = 0;
         public long ScopeID { get; }
-        public Scope(Scope parent)
+        public Scope(long id, [AllowNull] Scope parent)
         {
             Parent = parent;
             parent?._children.Add(this);
-            ScopeID = ++_lastScopeID;
+            ScopeID = id;
         }
 
         private readonly List<Scope> _children = new List<Scope>();
         public IReadOnlyList<Scope> Children => _children;
 
+        [AllowNull]
         public Scope Parent { get; }
 
-        public void NewIdent(SymbolTable symbols, RedstarParser.IdentContext ident)
+        public void AddSymbol(ISymbol symbol)
         {
-            if (_declaredIdents.ContainsKey(ident.GetText()))
+            if (_declaredIdents.TryAdd(symbol.Name, symbol))
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"{ident.Start.Location()} Ident redefined");
-                Console.ForegroundColor = ConsoleColor.White;
+                Out.Debug(symbol.Declaration, $"New ident: {symbol.Name,-15} (SymbolID {symbol.ID}, ScopeID {ScopeID})");
             }
             else
             {
-                var symbol = symbols.CreateIdentiferSymbol(ident);
-                Console.WriteLine($"{symbol.Declaration.Location()} New ident: {symbol.Name} (SymbolID {symbol.ID}, ScopeID {ScopeID})");
-                _declaredIdents.Add(symbol.Name, symbol);
+                Out.Error(1, symbol.Declaration, $"{symbol.Name} redefined");
             }
         }
 
         private Dictionary<string, ISymbol> _declaredIdents { get; } = new Dictionary<string, ISymbol>();
         public IReadOnlyDictionary<string, ISymbol> DeclaredIdents => _declaredIdents;
 
+        [return: MaybeNull]
         public ISymbol Find(string identName)
         {
             if (_declaredIdents.TryGetValue(identName, out var symbol))
