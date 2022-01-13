@@ -1,18 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Redstar.Parser;
 
 namespace Redstar.Internal
 {
     public class Scope
     {
-        public long ScopeID { get; }
+        public long ID { get; }
         public Scope(long id, [AllowNull] Scope parent)
         {
             Parent = parent;
             parent?._children.Add(this);
-            ScopeID = id;
+            ID = id;
         }
 
         private readonly List<Scope> _children = new List<Scope>();
@@ -23,13 +24,13 @@ namespace Redstar.Internal
 
         public void AddSymbol(ISymbol symbol)
         {
-            if (_declaredIdents.TryAdd(symbol.Name, symbol))
+            if (!_declaredIdents.TryAdd(symbol.Name, symbol))
             {
-                Out.Debug(symbol.Declaration, $"New ident: {symbol.Name,-15} (SymbolID {symbol.ID}, ScopeID {ScopeID})");
+                Out.Error(1, symbol.Declaration, $"{symbol.Name} redefined");
             }
             else
             {
-                Out.Error(1, symbol.Declaration, $"{symbol.Name} redefined");
+                Out.Debug(DebugCategory.ScopeAndSymbol, symbol.Declaration, $"New ident: {symbol.Name,-15} (SymbolID {symbol.ID}, ScopeID {ID})");
             }
         }
 
@@ -50,6 +51,30 @@ namespace Redstar.Internal
             }
 
             return null;
+        }
+
+        [return: MaybeNull]
+        public ISymbol FindInThisScope(string identName)
+        {
+            if (_declaredIdents.TryGetValue(identName, out var symbol))
+            {
+                return symbol;
+            }
+
+            return null;
+        }
+
+        public override string ToString()
+        {
+            return ID.ToString() + "\n" + string.Join("\n", Children.Select(x => x.ToString(1)));
+        }
+
+        public string ToString(int level)
+        {
+            return new string(' ', level * 2) +
+                ID.ToString() +
+                "\n" +
+                string.Join("\n", Children.Select(x => x.ToString(level + 1)));
         }
     }
 }

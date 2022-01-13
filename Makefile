@@ -5,6 +5,9 @@ rebuild: grammar
 	dotnet clean
 	dotnet build src/
 
+run: build
+	dotnet run --project src/ -- examples/scratch/main.red
+
 testanno: build
 	dotnet run --project src/ -- examples/testanno/main.red
 

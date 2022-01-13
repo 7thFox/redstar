@@ -19,9 +19,12 @@ namespace Redstar
                 context.EnterRule(listener);
             }
 
-            foreach (var child in context.children.OfType<ParserRuleContext>())
+            if (context.children != null)
             {
-                EnterEveryRule(child);
+                foreach (var child in context.children.OfType<ParserRuleContext>())
+                {
+                    EnterEveryRule(child);
+                }
             }
 
             foreach (var listener in Listeners)

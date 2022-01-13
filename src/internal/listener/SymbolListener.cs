@@ -8,10 +8,10 @@ using Antlr4.Runtime.Tree;
 
 namespace Redstar.Internal.Listener
 {
-    public class IdentifierListener : RedstarBaseListener
+    public class SymbolListener : RedstarBaseListener
     {
         private SymbolTable _symbols = new SymbolTable();
-        public IdentifierListener(SymbolTable symbolTable) => _symbols = symbolTable;
+        public SymbolListener(SymbolTable symbolTable) => _symbols = symbolTable;
 
         public override void ExitStart([NotNull] RedstarParser.StartContext context)
         {
@@ -20,22 +20,22 @@ namespace Redstar.Internal.Listener
 
         public override void EnterFuncDecl([NotNull] RedstarParser.FuncDeclContext context)
         {
-            _symbols.CreateIdentiferSymbol(context.ident());
+            _symbols.CreateFuncSymbol(context.ident());
         }
 
         public override void EnterFuncParameter([NotNull] RedstarParser.FuncParameterContext context)
         {
-            _symbols.CreateIdentiferSymbol(context.ident());
+            _symbols.CreateLocalVariableSymbol(context.ident());
         }
 
         public override void EnterVarDefine([NotNull] RedstarParser.VarDefineContext context)
         {
-            _symbols.CreateIdentiferSymbol(context.ident());
+            _symbols.CreateLocalVariableSymbol(context.ident());
         }
 
         public override void EnterAttrDecl([NotNull] RedstarParser.AttrDeclContext context)
         {
-            _symbols.CreateIdentiferSymbol(context.ident());
+            _symbols.CreateAttributeSymbol(context.ident());
         }
 
         public override void EnterIdent([NotNull] RedstarParser.IdentContext context)

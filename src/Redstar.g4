@@ -46,15 +46,6 @@ exp
     : binaryExp
     | term
     ;
-
-varDefine : ident ':' ( attrList? typename )? '=' exp ;
-attrList : '[' ident ( ',' ident )* ']' ;
-
-funcCall : ident '(' operands? ')' ;
-operands : exp ( ',' exp )* ;
-
-returnStmt : 'return' exp ;
-
 binaryExp : term op exp ;
 term
     : literal
@@ -64,9 +55,20 @@ term
     | '(' exp ')'
     ;
 
+varDefine : ident ':' ( attrList? typename )? '=' exp ;
+attrList : '[' ident ( ',' ident )* ']' ;
+
+funcCall : ident '(' operands? ')' ;
+operands : exp ( ',' exp )* ;
+
+returnStmt : 'return' exp ;
+
+
 literal
-    : literalInt
+    : literalString
+    | literalInt
     | literalDecimal;
+literalString : STRINGLIT ;
 literalInt
     : INT ( 'e' '-'? INT )?
     | '(' '-' INT ( 'e' '-'? INT )? ')' ;
@@ -82,7 +84,7 @@ typename
 ident : IDENT ;
 op : OP ;
 
-
+STRINGLIT : '"' ( ~ ["\n\\] | '\\' [\\nr"])*? '"' ;
 INT : [0-9]+ ;
 OP
     : '<<='

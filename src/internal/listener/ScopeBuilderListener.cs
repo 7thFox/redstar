@@ -5,37 +5,45 @@ using Redstar.Parser;
 
 namespace Redstar.Internal.Listener
 {
-    public class ScopeListener : RedstarBaseListener
+    public class ScopeBuilderListener : RedstarBaseListener
     {
         private SymbolTable _symbols;
-        public ScopeListener(SymbolTable symbols) => _symbols = symbols;
+        private Stack<long> _scopes = new Stack<long>();
+        public ScopeBuilderListener(SymbolTable symbols) => _symbols = symbols;
+
+        public override void EnterStart([NotNull] RedstarParser.StartContext context)
+        {
+            _scopes.Push(_symbols.SetScope(_symbols.ToplevelScope.ID));
+        }
 
         public override void ExitStart([NotNull] RedstarParser.StartContext context)
         {
             ValidateScope(_symbols.ToplevelScope);
         }
 
-        // Enter
         public override void EnterFuncParameters([NotNull] RedstarParser.FuncParametersContext context)
         {
-            _symbols.OpenScope();
+            // only created after the func name
+            _scopes.Push(_symbols.SetScope(_symbols.CreateScope()));
+        }
+        public override void ExitFuncDecl([NotNull] RedstarParser.FuncDeclContext context)
+        {
+            if (context.funcParameters() != null)
+            {
+                // only closed after the body
+                _scopes.Pop();
+                _symbols.SetScope(_scopes.Peek());
+            }
         }
 
         public override void EnterBody([NotNull] RedstarParser.BodyContext context)
         {
-            _symbols.OpenScope();
+            _scopes.Push(_symbols.SetScope(_symbols.CreateScope()));
         }
-
-        // Exit
-
-        public override void ExitFuncParameters([NotNull] RedstarParser.FuncParametersContext context)
-        {
-            _symbols.CloseScope();
-        }
-
         public override void ExitBody([NotNull] RedstarParser.BodyContext context)
         {
-            _symbols.CloseScope();
+            _scopes.Pop();
+            _symbols.SetScope(_scopes.Peek());
         }
 
         private void ValidateScope(Scope scopeRoot)

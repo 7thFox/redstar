@@ -2,7 +2,9 @@ namespace Redstar
 {
     public enum SymbolType
     {
-        Identifer,
+        Attribute,
+        Function,
+        LocalVariable,
         Type,
     }
 }
