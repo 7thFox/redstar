@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Redstar.Parse;
-using Redstar.Symbols.Mutable;
+using Redstar.Symbols.Internal;
 
-namespace Redstar.Symbols.Listener
+namespace Redstar.Symbols.Internal.Listener
 {
     internal class ScopeBuilderListener : RedstarBaseListener
     {

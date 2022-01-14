@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Redstar.Parse;
 
-namespace Redstar.Symbols.Mutable
+namespace Redstar.Symbols.Internal
 {
     internal class Scope
     {

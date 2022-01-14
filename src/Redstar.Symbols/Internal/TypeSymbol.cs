@@ -6,16 +6,17 @@ using System.Collections.Generic;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Symbols.Mutable
+namespace Redstar.Symbols.Internal
 {
-    internal class LocalVariableSymbol : ISymbol
+    internal class TypeSymbol : ISymbol
     {
-        public SymbolType Type => SymbolType.LocalVariable;
+        public SymbolType Type => SymbolType.Type;
         public long ID { get; }
         public string Name { get; }
+        [AllowNull]
         public IToken Declaration { get; }
 
-        public LocalVariableSymbol(long id, string name, IToken decl)
+        public TypeSymbol(long id, string name, [AllowNull] IToken decl)
         {
             ID = id;
             Name = name;

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Redstar.Parse;
 
-namespace Redstar.Symbols.Mutable
+namespace Redstar.Symbols.Internal
 {
     internal static class SymbolFactory
     {

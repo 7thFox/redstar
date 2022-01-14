@@ -1,7 +1,7 @@
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Symbols.Mutable
+namespace Redstar.Symbols.Internal
 {
     internal class AttributeSymbol : ISymbol
     {

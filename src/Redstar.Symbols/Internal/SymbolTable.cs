@@ -1,22 +1,24 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Redstar.Parse;
+using Redstar.Symbols.Internal;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Symbols.Mutable
+namespace Redstar.Symbols
 {
-    internal class SymbolTable : ISymbolTable
+    public partial class SymbolTable
     {
-        public readonly Scope ImplicitScope;
-        public readonly Scope ToplevelScope;
-        public Scope CurrentScope { get; private set; }
+        internal readonly Scope ImplicitScope;
+        internal readonly Scope BuildScope;
+        internal readonly Scope ToplevelScope;
+        internal Scope CurrentScope { get; private set; }
         private Dictionary<long, ISymbol> _symbols = new ();
         private Dictionary<long, Scope> _scopeByID = new ();
         private long _lastSymbolID;
         private long _lastScopeID;
 
-        public SymbolTable()
+        internal SymbolTable()
         {
             CurrentScope = ImplicitScope = new Scope(-1, null);
             _scopeByID[ImplicitScope.ID] = ImplicitScope;
@@ -40,32 +42,32 @@ namespace Redstar.Symbols.Mutable
             _scopeByID[ToplevelScope.ID] = ToplevelScope;
         }
 
-        public void RegisterSymbol(ISymbol symbol)
+        internal void RegisterSymbol(ISymbol symbol)
         {
             CurrentScope.AddSymbol(symbol);
         }
 
-        public void SetImplicitScope(Scope scope)
+        internal void SetImplicitScope(Scope scope)
         {
 
         }
 #region Creates
-        public ISymbol CreateLocalVariableSymbol(RedstarParser.IdentContext ident)
+        internal ISymbol CreateLocalVariableSymbol(RedstarParser.IdentContext ident)
         {
             return Add(new LocalVariableSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
         }
 
-        public ISymbol CreateAttributeSymbol(RedstarParser.IdentContext ident)
+        internal ISymbol CreateAttributeSymbol(RedstarParser.IdentContext ident)
         {
             return Add(new AttributeSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
         }
 
-        public ISymbol CreateFuncSymbol(RedstarParser.IdentContext ident)
+        internal ISymbol CreateFuncSymbol(RedstarParser.IdentContext ident)
         {
             return Add(new FuncSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
         }
 
-        public long CreateScope()
+        internal long CreateScope()
         {
             var scope = new Scope(++_lastScopeID, CurrentScope);
             _scopeByID[scope.ID] = scope;
@@ -74,25 +76,10 @@ namespace Redstar.Symbols.Mutable
 #endregion
 
 #region Utilities
-        public long SetScope(long id)
+        internal long SetScope(long id)
         {
             CurrentScope = _scopeByID[id];
             return CurrentScope.ID;
-        }
-
-        public ISymbol GetSymbol(long id) => _symbols[id];
-
-        [return: MaybeNull]
-        public ISymbol Find(string symbolName)
-        {
-            return FastFind(symbolName) ?? CurrentScope.Find(symbolName);
-        }
-
-        [return: MaybeNull]
-        public ISymbol FastFind(string symbolName)
-        {
-            return ImplicitScope.FindInThisScope(symbolName)
-                ?? CurrentScope.FindInThisScope(symbolName);
         }
 #endregion
 #region Private
