@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Redstar.Parser;
+using Redstar.Parse;
+using Redstar.Symbols.Mutable;
 
-namespace Redstar.Internal.Listener
+namespace Redstar.Symbols.Listener
 {
-    public class ScopeBuilderListener : RedstarBaseListener
+    internal class ScopeBuilderListener : RedstarBaseListener
     {
         private SymbolTable _symbols;
         private Stack<long> _scopes = new Stack<long>();
@@ -13,6 +14,8 @@ namespace Redstar.Internal.Listener
 
         public override void EnterStart([NotNull] RedstarParser.StartContext context)
         {
+            // var scope = SymbolFactory.CreateScope(null);// File top-level
+            // _symbols.RegisterSymbol(scope);
             _scopes.Push(_symbols.SetScope(_symbols.ToplevelScope.ID));
         }
 

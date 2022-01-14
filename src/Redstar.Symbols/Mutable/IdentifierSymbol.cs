@@ -1,4 +1,4 @@
-using Redstar.Parser;
+using Redstar.Parse;
 using System;
 using System.Linq;
 using System.Diagnostics.CodeAnalysis;
@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Internal
+namespace Redstar.Symbols.Mutable
 {
-    public class LocalVariableSymbol : ISymbol
+    internal class LocalVariableSymbol : ISymbol
     {
         public SymbolType Type => SymbolType.LocalVariable;
         public long ID { get; }

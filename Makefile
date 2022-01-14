@@ -2,24 +2,29 @@ build:
 	dotnet build src/
 
 rebuild: grammar
-	dotnet clean
+	dotnet clean src/
 	dotnet build src/
 
-run: build
-	dotnet run --project src/ -- examples/scratch/main.red
+run:
+	dotnet run --project src/Redstar.Frontend/ -- examples/scratch/main.red
 
-testanno: build
-	dotnet run --project src/ -- examples/testanno/main.red
+testanno:
+	dotnet run --project src/Redstar.Frontend/ -- examples/testanno/main.red
 
-testscope: build
-	dotnet run --project src/ -- examples/testscope/main.red
+testscope:
+	dotnet run --project src/Redstar.Frontend/ -- examples/testscope/main.red
 
 grammar:
-	rm -rf src/parser
 	antlr4 \
 		-Dlanguage=CSharp \
-		-Xexact-output-dir \
-		-o src/parser \
-		-visitor \
-		-package Redstar.Parser \
-		src/Redstar.g4
+		-package Redstar.Parse \
+		src/Redstar.Parse/Redstar.g4
+
+Redstar.Parse: grammar
+	dotnet clean build src/Redstar.Parse
+
+Redstar.Symbols:
+	dotnet build src/Redstar.Symbols
+
+Redstar.Frontend:
+	dotnet build src/Redstar.Symbols

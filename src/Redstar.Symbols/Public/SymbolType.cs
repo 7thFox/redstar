@@ -1,4 +1,4 @@
-namespace Redstar
+namespace Redstar.Symbols
 {
     public enum SymbolType
     {

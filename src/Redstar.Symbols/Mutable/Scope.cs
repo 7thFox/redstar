@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Redstar.Parser;
+using Redstar.Parse;
 
-namespace Redstar.Internal
+namespace Redstar.Symbols.Mutable
 {
-    public class Scope
+    internal class Scope
     {
         public long ID { get; }
         public Scope(long id, [AllowNull] Scope parent)

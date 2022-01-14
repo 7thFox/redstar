@@ -1,16 +1,17 @@
 using System;
 using System.Linq;
-using Redstar.Parser;
+using Redstar.Parse;
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using Antlr4.Runtime;
+using Redstar.Symbols.Mutable;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Internal.Listener
+namespace Redstar.Symbols.Listener
 {
-    public class SymbolListener : RedstarBaseListener
+    internal class SymbolListener : RedstarBaseListener
     {
-        private SymbolTable _symbols = new SymbolTable();
+        private SymbolTable _symbols;
         public SymbolListener(SymbolTable symbolTable) => _symbols = symbolTable;
 
         public override void ExitStart([NotNull] RedstarParser.StartContext context)

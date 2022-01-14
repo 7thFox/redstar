@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redstar.Frontend", "Redstar.Frontend\Redstar.Frontend.csproj", "{B7C78D49-5573-4FB8-8B86-6D561EA00E72}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redstar.Parse", "Redstar.Parse\Redstar.Parse.csproj", "{AAF17544-6698-41AE-A979-CC2DF562804A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Redstar.Symbols", "Redstar.Symbols\Redstar.Symbols.csproj", "{C497C051-AA60-4AE9-8779-41C433F16068}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B7C78D49-5573-4FB8-8B86-6D561EA00E72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7C78D49-5573-4FB8-8B86-6D561EA00E72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7C78D49-5573-4FB8-8B86-6D561EA00E72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7C78D49-5573-4FB8-8B86-6D561EA00E72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAF17544-6698-41AE-A979-CC2DF562804A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAF17544-6698-41AE-A979-CC2DF562804A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAF17544-6698-41AE-A979-CC2DF562804A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAF17544-6698-41AE-A979-CC2DF562804A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C497C051-AA60-4AE9-8779-41C433F16068}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C497C051-AA60-4AE9-8779-41C433F16068}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C497C051-AA60-4AE9-8779-41C433F16068}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C497C051-AA60-4AE9-8779-41C433F16068}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

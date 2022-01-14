@@ -3,9 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar
+namespace Redstar.Symbols
 {
-    public static class Extensions
+    internal static class Extensions
     {
         public static string Location([AllowNull] this IToken token)
         {
@@ -14,7 +14,7 @@ namespace Redstar
                 return "implicit";
             }
 
-            return $"{token.InputStream.SourceName}:{token.Line}:{token.Column}";
+            return $"{token.InputStream.SourceName}:{token.Line}:{token.Column+1}";
         }
 
         [return: NotNull]

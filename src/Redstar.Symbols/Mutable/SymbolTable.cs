@@ -1,16 +1,18 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Redstar.Parser;
+using Redstar.Parse;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 
-namespace Redstar.Internal
+namespace Redstar.Symbols.Mutable
 {
-    public class SymbolTable : ISymbolTable
+    internal class SymbolTable : ISymbolTable
     {
         public readonly Scope ImplicitScope;
         public readonly Scope ToplevelScope;
         public Scope CurrentScope { get; private set; }
-        private List<ISymbol> _symbols = new List<ISymbol>();
-        private Dictionary<long, Scope> _scopeByID = new Dictionary<long, Scope>();
+        private Dictionary<long, ISymbol> _symbols = new ();
+        private Dictionary<long, Scope> _scopeByID = new ();
         private long _lastSymbolID;
         private long _lastScopeID;
 
@@ -38,6 +40,15 @@ namespace Redstar.Internal
             _scopeByID[ToplevelScope.ID] = ToplevelScope;
         }
 
+        public void RegisterSymbol(ISymbol symbol)
+        {
+            CurrentScope.AddSymbol(symbol);
+        }
+
+        public void SetImplicitScope(Scope scope)
+        {
+
+        }
 #region Creates
         public ISymbol CreateLocalVariableSymbol(RedstarParser.IdentContext ident)
         {
@@ -65,7 +76,16 @@ namespace Redstar.Internal
 #region Utilities
         public long SetScope(long id)
         {
-            return (CurrentScope = _scopeByID[id]).ID;
+            CurrentScope = _scopeByID[id];
+            return CurrentScope.ID;
+        }
+
+        public ISymbol GetSymbol(long id) => _symbols[id];
+
+        [return: MaybeNull]
+        public ISymbol Find(string symbolName)
+        {
+            return FastFind(symbolName) ?? CurrentScope.Find(symbolName);
         }
 
         [return: MaybeNull]
@@ -78,7 +98,7 @@ namespace Redstar.Internal
 #region Private
         private ISymbol Add(ISymbol symbol)
         {
-            _symbols.Add(symbol);
+            _symbols.Add(symbol.ID, symbol);
             CurrentScope.AddSymbol(symbol);
             return symbol;
         }

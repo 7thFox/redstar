@@ -1,11 +1,11 @@
-using Redstar.Parser;
+using Redstar.Parse;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar
+namespace Redstar.Symbols
 {
     public class MultiListener : RedstarBaseListener
     {
