@@ -14,6 +14,9 @@ testanno:
 testscope:
 	dotnet run --project src/Redstar.Frontend/ -- --printscope examples/testscope/main.red
 
+testsymbols:
+	dotnet run --project src/Redstar.Frontend/ -- --printsymbols examples/testscope/main.red
+
 grammar:
 	antlr4 \
 		-Dlanguage=CSharp \

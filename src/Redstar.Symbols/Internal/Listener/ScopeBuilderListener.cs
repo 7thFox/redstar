@@ -19,9 +19,9 @@ namespace Redstar.Symbols.Internal.Listener
             _scopes.Push(_unit.UnitScope);
         }
 
-        private void EnterScope(IToken location)
+        private void EnterScope([NotNull] IToken location)
         {
-            var scope = Scope(_scopes.Peek());
+            var scope = Scope(_scopes.Peek(), location);
             Out.Debug(DebugCategory.Scope, location, $"Enter Scope ID {scope.ID}");
             _unit.AddScope(scope);
             _scopes.Push(scope);

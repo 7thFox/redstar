@@ -7,7 +7,7 @@ namespace Redstar.Symbols.Internal
 {
     internal static class Extensions
     {
-        public static string Location([AllowNull] this IToken token)
+        public static string Location(this IToken? token)
         {
             if (token == null)
             {
@@ -18,7 +18,7 @@ namespace Redstar.Symbols.Internal
         }
 
         [return: NotNull]
-        public static ISymbol MustFind([AllowNull] this ISymbol symbol)
+        public static ISymbol MustFind(this ISymbol? symbol)
             => symbol ?? throw new Exception("Could not find implicit symbol");
 
         // public static bool SymbolEqual(this ISymbol left, ISymbol right)

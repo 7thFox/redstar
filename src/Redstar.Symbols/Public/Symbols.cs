@@ -9,7 +9,7 @@ namespace Redstar.Symbols
     {
         public static SymbolTable ParseFiles(IEnumerable<string> paths)
         {
-            var implicitScope = Scope(null);
+            var implicitScope = Scope(null, null);
             Out.Debug(DebugCategory.Scope, null, $"Implicit Scope ID {implicitScope.ID}");
             var symbolTable = new SymbolTable(implicitScope);
             symbolTable.Register(implicitScope);
@@ -17,7 +17,7 @@ namespace Redstar.Symbols
 
             foreach (var path in paths)
             {
-                var unit = Unit(path, Scope(symbolTable.ImplicitScope));
+                var unit = Unit(path, Scope(symbolTable.ImplicitScope, null));
                 Out.Debug(DebugCategory.Scope, null, $"Unit Scope ID {unit.UnitScope.ID}");
                 symbolTable.Register(unit);
                 unit.Parse(symbolTable);

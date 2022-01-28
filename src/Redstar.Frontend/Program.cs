@@ -22,6 +22,9 @@ while (argEnumerator.MoveNext())
             case "printtypes":
                 debugCategories.Add(DebugCategory.Type);
                 break;
+            case "printsymbols":
+                debugCategories.Add(DebugCategory.Symbol);
+                break;
             default:
                 throw new Exception($"Invalid argument {argEnumerator.Current}");
         }

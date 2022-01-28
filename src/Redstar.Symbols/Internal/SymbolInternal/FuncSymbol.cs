@@ -4,7 +4,7 @@ using Antlr4.Runtime.Tree;
 
 namespace Redstar.Symbols.Internal
 {
-    internal class FuncSymbol : ISymbol
+    internal class FuncSymbol : ISymbolInternal
     {
         public SymbolType Type => SymbolType.Function;
         public long ID { get; }
@@ -20,5 +20,7 @@ namespace Redstar.Symbols.Internal
             Name = name;
             Declaration = decl;
         }
+
+        void ISymbolInternal.CopyInternalData() { }
     }
 }

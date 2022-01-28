@@ -36,6 +36,7 @@ namespace Redstar.Symbols
 
         internal T Register<T>(T symbol) where T : ISymbolInternal
         {
+            Out.Debug(DebugCategory.Symbol, symbol.Declaration, $"Symbol {symbol.Type} ID {symbol.ID} ({symbol.Name})");
             // CurrentScope.AddSymbol(symbol);
             return symbol;
         }

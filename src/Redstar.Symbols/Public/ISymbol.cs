@@ -10,12 +10,10 @@ namespace Redstar.Symbols
 {
     public interface ISymbol
     {
-        // long ID { get; }
-        // SymbolType Type { get; }
-        // string Name { get; }
-
-        // [MaybeNull]
-        // IToken Declaration { get; }
+        long ID { get; }
+        SymbolType Type { get; }
+        string Name { get; }
+        IToken? Declaration { get; }
     }
 
     internal interface ISymbolInternal : ISymbol

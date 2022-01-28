@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Redstar.Parse;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 
 namespace Redstar.Symbols
 {
     public partial class Scope
     {
-        internal Scope(long id, [AllowNull] Scope parent)
+        internal Scope(long id, Scope? parent, IToken? declaration)
         {
             Parent = parent;
+            Declaration = declaration;
             // parent?._children.Add(this);
             ID = id;
         }
@@ -18,8 +21,7 @@ namespace Redstar.Symbols
         // private readonly List<Scope> _children = new List<Scope>();
         // internal IReadOnlyList<Scope> Children => _children;
 
-        [AllowNull]
-        internal Scope Parent { get; }
+        internal Scope? Parent { get; }
 
         // internal void AddSymbol(ISymbol symbol)
         // {
@@ -36,7 +38,7 @@ namespace Redstar.Symbols
         // private Dictionary<string, ISymbol> _declaredIdents { get; } = new Dictionary<string, ISymbol>();
         // internal IReadOnlyDictionary<string, ISymbol> DeclaredIdents => _declaredIdents;
 
-        // [return: MaybeNull]
+        // [return: AllowNull]
         // internal ISymbol Find(string identName)
         // {
         //     if (_declaredIdents.TryGetValue(identName, out var symbol))
@@ -52,7 +54,7 @@ namespace Redstar.Symbols
         //     return null;
         // }
 
-        // [return: MaybeNull]
+        // [return: AllowNull]
         // internal ISymbol FindInThisScope(string identName)
         // {
         //     if (_declaredIdents.TryGetValue(identName, out var symbol))
@@ -76,9 +78,7 @@ namespace Redstar.Symbols
         //         string.Join("\n", Children.Select(x => x.ToString(level + 1)));
         // }
 
-        internal void CopyInternalData()
-        {
 
-        }
+        void ISymbolInternal.CopyInternalData() { }
     }
 }

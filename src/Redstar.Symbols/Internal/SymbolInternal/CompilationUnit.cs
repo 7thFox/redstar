@@ -10,7 +10,6 @@ namespace Redstar.Symbols
 {
     public partial class CompilationUnit
     {
-        internal long ID { get; }
         internal Scope UnitScope { get; }
         private ImmutableArray<Scope>.Builder _scopes { get; }
 
@@ -37,7 +36,7 @@ namespace Redstar.Symbols
             var buildProcess = new MultiListener();
 
             buildProcess.Listeners.Add(new ScopeBuilderListener(this));
-            // buildProcess.Listeners.Add(new SymbolListener(symbolTable));
+            buildProcess.Listeners.Add(new SymbolListener(symbolTable));
             buildProcess.EnterEveryRule(tree);
 
             // buildProcess.Listeners.Clear();
@@ -50,6 +49,11 @@ namespace Redstar.Symbols
         internal void AddScope(Scope scope)
         {
             _scopes.Add(scope);
+        }
+
+        void ISymbolInternal.CopyInternalData()
+        {
+            Scopes = _scopes.ToImmutable();
         }
     }
 }

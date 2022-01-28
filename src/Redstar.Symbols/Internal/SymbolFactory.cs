@@ -9,10 +9,10 @@ namespace Redstar.Symbols.Internal
     internal static class SymbolFactory
     {
         private static long _symbolID = 0;
-        // public static ISymbol LocalVariableSymbol(RedstarParser.IdentContext ident)
-        // {
-        //     return new LocalVariableSymbol(++_symbolID, ident.GetText(), ident.Start);
-        // }
+        public static LocalVariableSymbol LocalVariableSymbol(RedstarParser.IdentContext ident)
+        {
+            return new LocalVariableSymbol(++_symbolID, ident.GetText(), ident.Start);
+        }
 
         // public static ISymbol AttributeSymbol(RedstarParser.IdentContext ident)
         // {
@@ -24,12 +24,12 @@ namespace Redstar.Symbols.Internal
         //     return new FuncSymbol(++_symbolID, ident.GetText(), ident.Start);
         // }
 
-        public static Scope Scope([AllowNull] Scope parent)
+        public static Scope Scope(Scope? parent, IToken? declaration)
         {
-            return new Scope(++_symbolID, parent);
+            return new Scope(++_symbolID, parent, declaration);
         }
 
-        public static TypeSymbol Type(string name, [AllowNull] IToken location)
+        public static TypeSymbol Type(string name, IToken? location)
         {
             return new TypeSymbol(++_symbolID, name, location);
         }
