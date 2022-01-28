@@ -2,17 +2,47 @@
 using Redstar;
 using Redstar.Symbols;
 
-Out.DebugCategories = new[]
-{
-    // DebugCategory.ScopeAndSymbol,
-    DebugCategory.Type,
-};
+var debugCategories = new List<DebugCategory>();
+var filePaths = new List<string>();
 
-if (args.Length > 0)
+IEnumerator<string> argEnumerator = args.AsEnumerable().GetEnumerator();
+while (argEnumerator.MoveNext())
 {
-    Symbols.ParseFiles(args);
+    if (filePaths.Any())
+    {
+        filePaths.Add(argEnumerator.Current);
+    }
+    else if (argEnumerator.Current.StartsWith("--"))// Long args
+    {
+        switch (argEnumerator.Current.Substring(2).ToLower())
+        {
+            case "printscope":
+                debugCategories.Add(DebugCategory.Scope);
+                break;
+            case "printtypes":
+                debugCategories.Add(DebugCategory.Type);
+                break;
+            default:
+                throw new Exception($"Invalid argument {argEnumerator.Current}");
+        }
+    }
+    else if (argEnumerator.Current.StartsWith("-"))// short args
+    {
+        switch (argEnumerator.Current.Substring(1).ToLower())
+        {
+            default:
+                throw new Exception($"Invalid argument {argEnumerator.Current}");
+        }
+    }
+    else // first filename
+    {
+        filePaths.Add(argEnumerator.Current);
+    }
 }
-else
+
+Out.DebugCategories = debugCategories;
+if (filePaths.Count == 0)
 {
-    Symbols.ParseFiles("/home/josh/src/redstar/examples/scratch/main.red");
+    filePaths.Add("/home/josh/src/redstar/examples/testscope/main.red");
 }
+Symbols.ParseFiles(filePaths);

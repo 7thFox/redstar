@@ -10,9 +10,9 @@ namespace Redstar.Symbols.Internal
         public long ID { get; }
         public string Name { get; }
         public IToken Declaration { get; }
-        public TypeSymbol FuncType { get; }
-        public TypeSymbol ReturnType { get; }
-        public LocalVariableSymbol[] Parameters { get; }
+        // public TypeSymbol FuncType { get; }
+        // public TypeSymbol ReturnType { get; }
+        // public LocalVariableSymbol[] Parameters { get; }
 
         public FuncSymbol(long id, string name, IToken decl)
         {

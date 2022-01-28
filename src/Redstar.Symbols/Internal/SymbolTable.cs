@@ -4,91 +4,89 @@ using Redstar.Parse;
 using Redstar.Symbols.Internal;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using System.Collections.Immutable;
 
 namespace Redstar.Symbols
 {
     public partial class SymbolTable
     {
-        internal readonly Scope ImplicitScope;
-        internal readonly Scope BuildScope;
-        internal readonly Scope ToplevelScope;
         internal Scope CurrentScope { get; private set; }
-        private Dictionary<long, ISymbol> _symbols = new ();
-        private Dictionary<long, Scope> _scopeByID = new ();
-        private long _lastSymbolID;
-        private long _lastScopeID;
+        internal ImmutableArray<CompilationUnit>.Builder _units;
 
-        internal SymbolTable()
+        internal SymbolTable(Scope implicitScope)
         {
-            CurrentScope = ImplicitScope = new Scope(-1, null);
-            _scopeByID[ImplicitScope.ID] = ImplicitScope;
-
-            Add(new TypeSymbol(-100, "void", null));
-            Add(new TypeSymbol(-101, "byte", null));
-            Add(new TypeSymbol(-102, "short", null));
-            Add(new TypeSymbol(-103, "int", null));
-            Add(new TypeSymbol(-104, "long", null));
-            Add(new TypeSymbol(-105, "bool", null));
-            Add(new TypeSymbol(-106, "char", null));
-            Add(new TypeSymbol(-107, "string", null));
-            Add(new TypeSymbol(-108, "decimal", null));
-            Add(new TypeSymbol(-109, "float", null));
-            Add(new TypeSymbol(-110, "double", null));
-
-            _lastSymbolID = 0;
-            _lastScopeID = 0;
-
-            CurrentScope = ToplevelScope = new Scope(++_lastScopeID, ImplicitScope);
-            _scopeByID[ToplevelScope.ID] = ToplevelScope;
+            CurrentScope = ImplicitScope = implicitScope;
+            _units = ImmutableArray.CreateBuilder<CompilationUnit>();
         }
 
-        internal void RegisterSymbol(ISymbol symbol)
+        internal void CreateImplicitSymbols()
         {
-            CurrentScope.AddSymbol(symbol);
+            Register(SymbolFactory.Type("void", null));
+            Register(SymbolFactory.Type("byte", null));
+            Register(SymbolFactory.Type("short", null));
+            Register(SymbolFactory.Type("int", null));
+            Register(SymbolFactory.Type("long", null));
+            Register(SymbolFactory.Type("bool", null));
+            Register(SymbolFactory.Type("char", null));
+            Register(SymbolFactory.Type("string", null));
+            Register(SymbolFactory.Type("decimal", null));
+            Register(SymbolFactory.Type("float", null));
+            Register(SymbolFactory.Type("double", null));
         }
 
-        internal void SetImplicitScope(Scope scope)
+        internal T Register<T>(T symbol) where T : ISymbolInternal
         {
-
-        }
-#region Creates
-        internal ISymbol CreateLocalVariableSymbol(RedstarParser.IdentContext ident)
-        {
-            return Add(new LocalVariableSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
-        }
-
-        internal ISymbol CreateAttributeSymbol(RedstarParser.IdentContext ident)
-        {
-            return Add(new AttributeSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
-        }
-
-        internal ISymbol CreateFuncSymbol(RedstarParser.IdentContext ident)
-        {
-            return Add(new FuncSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
-        }
-
-        internal long CreateScope()
-        {
-            var scope = new Scope(++_lastScopeID, CurrentScope);
-            _scopeByID[scope.ID] = scope;
-            return scope.ID;
-        }
-#endregion
-
-#region Utilities
-        internal long SetScope(long id)
-        {
-            CurrentScope = _scopeByID[id];
-            return CurrentScope.ID;
-        }
-#endregion
-#region Private
-        private ISymbol Add(ISymbol symbol)
-        {
-            _symbols.Add(symbol.ID, symbol);
-            CurrentScope.AddSymbol(symbol);
+            // CurrentScope.AddSymbol(symbol);
             return symbol;
         }
-#endregion
+
+        internal void SetScope(Scope scope)
+        {
+            CurrentScope = scope;
+        }
+
+//         internal void SetImplicitScope(Scope scope)
+//         {
+
+//         }
+// #region Creates
+//         internal ISymbol CreateLocalVariableSymbol(RedstarParser.IdentContext ident)
+//         {
+//             return Add(new LocalVariableSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
+//         }
+
+//         internal ISymbol CreateAttributeSymbol(RedstarParser.IdentContext ident)
+//         {
+//             return Add(new AttributeSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
+//         }
+
+//         internal ISymbol CreateFuncSymbol(RedstarParser.IdentContext ident)
+//         {
+//             return Add(new FuncSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
+//         }
+
+//         internal long CreateScope()
+//         {
+//             var scope = new Scope(++_lastScopeID, CurrentScope);
+//             _scopeByID[scope.ID] = scope;
+//             return scope.ID;
+//         }
+// #endregion
+
+// #region Utilities
+//         internal long SetScope(long id)
+//         {
+//             CurrentScope = _scopeByID[id];
+//             return CurrentScope.ID;
+//         }
+// #endregion
+// #region Private
+//         private ISymbol Add(ISymbol symbol)
+//         {
+//             _symbols.Add(symbol.ID, symbol);
+//             CurrentScope.AddSymbol(symbol);
+//             return symbol;
+//         }
+// #endregion
     }
 }

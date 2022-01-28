@@ -12,7 +12,7 @@ testanno:
 	dotnet run --project src/Redstar.Frontend/ -- examples/testanno/main.red
 
 testscope:
-	dotnet run --project src/Redstar.Frontend/ -- examples/testscope/main.red
+	dotnet run --project src/Redstar.Frontend/ -- --printscope examples/testscope/main.red
 
 grammar:
 	antlr4 \

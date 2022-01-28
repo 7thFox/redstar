@@ -1,19 +1,27 @@
 using System.Linq;
 using Redstar.Parse;
+using Redstar.Symbols.Internal;
+using static Redstar.Symbols.Internal.SymbolFactory;
 
 namespace Redstar.Symbols
 {
     public static class Symbols
     {
-        public static SymbolTable ParseFiles(params string[] paths)
+        public static SymbolTable ParseFiles(IEnumerable<string> paths)
         {
-            var symbolTable = new SymbolTable();
+            var implicitScope = Scope(null);
+            Out.Debug(DebugCategory.Scope, null, $"Implicit Scope ID {implicitScope.ID}");
+            var symbolTable = new SymbolTable(implicitScope);
+            symbolTable.Register(implicitScope);
+            symbolTable.CreateImplicitSymbols();
 
             foreach (var path in paths)
             {
-                new CompilationUnit(path);
+                var unit = Unit(path, Scope(symbolTable.ImplicitScope));
+                Out.Debug(DebugCategory.Scope, null, $"Unit Scope ID {unit.UnitScope.ID}");
+                symbolTable.Register(unit);
+                unit.Parse(symbolTable);
             }
-
 
             return symbolTable;
         }

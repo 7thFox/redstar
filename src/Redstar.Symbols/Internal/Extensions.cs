@@ -21,9 +21,9 @@ namespace Redstar.Symbols.Internal
         public static ISymbol MustFind([AllowNull] this ISymbol symbol)
             => symbol ?? throw new Exception("Could not find implicit symbol");
 
-        public static bool SymbolEqual(this ISymbol left, ISymbol right)
-        {
-            return left.ID == right.ID;
-        }
+        // public static bool SymbolEqual(this ISymbol left, ISymbol right)
+        // {
+        //     return left.ID == right.ID;
+        // }
     }
 }
