@@ -8,6 +8,9 @@ rebuild: grammar
 run:
 	dotnet run --project src/Redstar.Frontend/ -- examples/scratch/main.red
 
+test:
+	dotnet test src/ --nologo
+
 testanno:
 	dotnet run --project src/Redstar.Frontend/ -- examples/testanno/main.red
 

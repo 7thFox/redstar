@@ -8,11 +8,7 @@ var filePaths = new List<string>();
 IEnumerator<string> argEnumerator = args.AsEnumerable().GetEnumerator();
 while (argEnumerator.MoveNext())
 {
-    if (filePaths.Any())
-    {
-        filePaths.Add(argEnumerator.Current);
-    }
-    else if (argEnumerator.Current.StartsWith("--"))// Long args
+    if (argEnumerator.Current.StartsWith("--"))// Long args
     {
         switch (argEnumerator.Current.Substring(2).ToLower())
         {
@@ -40,7 +36,7 @@ while (argEnumerator.MoveNext())
                 throw new Exception($"Invalid argument {argEnumerator.Current}");
         }
     }
-    else // first filename
+    else
     {
         filePaths.Add(argEnumerator.Current);
     }

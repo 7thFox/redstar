@@ -21,9 +21,8 @@ namespace Redstar.Symbols
             _scopes = ImmutableArray.CreateBuilder<Scope>();
         }
 
-        internal void Parse(SymbolTable symbolTable)
+        internal void Parse(SymbolTable symbolTable, ICharStream stream)
         {
-            var stream = CharStreams.fromPath(SourceName);
             var lexer = new RedstarLexer(stream);
             var tokens = new CommonTokenStream(lexer);
             var parser = new RedstarParser(tokens);
