@@ -11,10 +11,11 @@ namespace Redstar.Symbols.Internal.Listener
     internal class ScopeBuilderListener : RedstarBaseListener
     {
         private readonly CompilationUnit _unit;
-        // private SymbolTable _symbols;
+        private readonly SymbolTable _symbols;
         private readonly Stack<Scope> _scopes = new ();
-        public ScopeBuilderListener(CompilationUnit unit)
+        public ScopeBuilderListener(SymbolTable symbols, CompilationUnit unit)
         {
+            _symbols = symbols;
             _unit = unit;
             _scopes.Push(_unit.UnitScope);
         }
@@ -22,36 +23,29 @@ namespace Redstar.Symbols.Internal.Listener
         private void EnterScope([NotNull] IToken location)
         {
             var scope = Scope(_scopes.Peek(), location);
-            Out.Debug(DebugCategory.Scope, location, $"Enter Scope ID {scope.ID}");
             _unit.AddScope(scope);
             _scopes.Push(scope);
+            Out.Debug(DebugCategory.Scope, location, $"Enter Scope ID {scope.ID}");
+            _symbols.SetScope(scope);
         }
 
         private void ExitScope(IToken location)
         {
             var scope = _scopes.Pop();
             Out.Debug(DebugCategory.Scope, location, $"Exit Scope ID {scope.ID}");
-        }
-
-        public override void ExitStart([NotNull] RedstarParser.StartContext context)
-        {
-            if (_scopes.Count > 1)
-            {
-                throw new Exception("Scope stack uneven");
-            }
-            // ValidateScope(_symbols.ToplevelScope);
+            _symbols.SetScope(scope);
         }
 
         public override void EnterFuncParameters([NotNull] RedstarParser.FuncParametersContext context)
         {
-            // only created after the func name
+            // only add if we declare parameters
             EnterScope(context.Start);
         }
+
         public override void ExitFuncDecl([NotNull] RedstarParser.FuncDeclContext context)
         {
-            if (context.funcParameters() != null)
+            if (context.funcParameters() != null)// only added for params
             {
-                // only closed after the body
                 ExitScope(context.Stop);
             }
         }
@@ -60,34 +54,20 @@ namespace Redstar.Symbols.Internal.Listener
         {
             EnterScope(context.Start);
         }
+
         public override void ExitBody([NotNull] RedstarParser.BodyContext context)
         {
             ExitScope(context.Stop);
         }
 
-        // private void ValidateScope(Scope scopeRoot)
-        // {
-        //     // This has to be run as a post-loop so any upper-scope variables
-        //     // defined after the redecl are caught.
+        public override void ExitStart([NotNull] RedstarParser.StartContext context)
+        {
+            if (_scopes.Count > 1)
+            {
+                throw new Exception("Scope stack uneven");
+            }
 
-        //     verify(scopeRoot, new Dictionary<string, ISymbol>());
-
-        //     void verify(Scope scope, IReadOnlyDictionary<string, ISymbol> declAbove)
-        //     {
-        //         var declThis = new Dictionary<string, ISymbol>(declAbove);
-        //         foreach (var decl in scope.DeclaredIdents)
-        //         {
-        //             if (!declThis.TryAdd(decl.Key, decl.Value))
-        //             {
-        //                 Out.Error(2, decl.Value.Declaration, $"{decl.Value.Name} redefined outer scope variable");
-        //             }
-        //         }
-
-        //         foreach (var child in scope.Children)
-        //         {
-        //             verify(child, declThis);
-        //         }
-        //     }
-        // }
+            _symbols.SetScope(_scopes.Pop());
+        }
     }
 }

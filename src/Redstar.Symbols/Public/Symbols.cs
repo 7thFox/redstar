@@ -12,7 +12,6 @@ namespace Redstar.Symbols
             var implicitScope = Scope(null, null);
             Out.Debug(DebugCategory.Scope, null, $"Implicit Scope ID {implicitScope.ID}");
             var symbolTable = new SymbolTable(implicitScope);
-            symbolTable.Register(implicitScope);
             symbolTable.CreateImplicitSymbols();
 
             foreach (var path in paths)

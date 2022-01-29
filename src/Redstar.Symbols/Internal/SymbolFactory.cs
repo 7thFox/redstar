@@ -9,20 +9,20 @@ namespace Redstar.Symbols.Internal
     internal static class SymbolFactory
     {
         private static long _symbolID = 0;
-        public static LocalVariableSymbol LocalVariableSymbol(RedstarParser.IdentContext ident)
+        public static LocalVariableSymbol LocalVariable(RedstarParser.IdentContext ident)
         {
             return new LocalVariableSymbol(++_symbolID, ident.GetText(), ident.Start);
         }
 
-        // public static ISymbol AttributeSymbol(RedstarParser.IdentContext ident)
-        // {
-        //     return new AttributeSymbol(++_symbolID, ident.GetText(), ident.Start);
-        // }
+        public static AttributeSymbol Attribute(RedstarParser.IdentContext ident)
+        {
+            return new AttributeSymbol(++_symbolID, ident.GetText(), ident.Start);
+        }
 
-        // public static ISymbol FuncSymbol(RedstarParser.IdentContext ident)
-        // {
-        //     return new FuncSymbol(++_symbolID, ident.GetText(), ident.Start);
-        // }
+        public static FuncSymbol Func(RedstarParser.IdentContext ident)
+        {
+            return new FuncSymbol(++_symbolID, ident.GetText(), ident.Start);
+        }
 
         public static Scope Scope(Scope? parent, IToken? declaration)
         {

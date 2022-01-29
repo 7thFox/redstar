@@ -1,6 +1,6 @@
 x := 0;// 1
 
-x := 1;// 2 ERROR
+x := 1;// 2 RS0002
 // SCOPE 1
 func foo(y: int) int {// 3 ( 4 )
     // SCOPE 3
@@ -14,7 +14,7 @@ func foobar(y: int, z: int) int { // 5 ( 6 7 )
         return v + 3; // 9
     }
     // SCOPE 5
-    foo := 1;// 10 ERROR
+    foo := 1;// 10 RS0002
     w := foo(y);// 11 = 3 6
     u := baz(w);// 12 = 8 ( 10 )
     return w + u + y + z + x;// 10 12 6 7 2
@@ -22,7 +22,7 @@ func foobar(y: int, z: int) int { // 5 ( 6 7 )
 
 func foobaz(u: int) {// 13 ( 14 )
     // SCOPE 9
-    func baz(v: int) int { // 15 ( 16 ERROR )
+    func baz(v: int) int { // 15 ( 16 RS0002 )
         // SCOPE 11
         return u;// 14
     }

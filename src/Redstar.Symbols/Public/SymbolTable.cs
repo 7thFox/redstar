@@ -20,12 +20,25 @@ namespace Redstar.Symbols
         //     return FastFind(symbolName) ?? CurrentScope.Find(symbolName);
         // }
 
-        // [return: AllowNull]
-        // public ISymbol FastFind(string symbolName)
-        // {
-        //     return ImplicitScope.FindInThisScope(symbolName)
-        //         ?? CurrentScope.FindInThisScope(symbolName);
-        // }
+        public ISymbol? FastFind(string symbolName)
+        {
+            return ImplicitScope.FindInThisScope(symbolName)
+                ?? CurrentScope.FindInThisScope(symbolName);
+        }
+
+        public ISymbol? FastFind(IToken token)
+        {
+            if (_symbolByToken.TryGetValue(token, out var symbol))
+            {
+                return symbol;
+            }
+            return null;
+        }
+
+        public ISymbol? FastFind([DisallowNull] RedstarParser.IdentContext ident)
+        {
+            return FastFind(ident.Start) ?? FastFind(ident.GetText());
+        }
 
         internal void CopyInternalData()
         {

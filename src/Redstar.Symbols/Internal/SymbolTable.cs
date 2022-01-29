@@ -34,10 +34,27 @@ namespace Redstar.Symbols
             Register(SymbolFactory.Type("double", null));
         }
 
+        private readonly Dictionary<IToken, ISymbol> _symbolByToken = new ();
+
+        internal void AddReference(ISymbol symbolReferenced, IToken locationReferenced)
+        {
+            if (!_symbolByToken.TryAdd(locationReferenced, symbolReferenced))
+            {
+                Out.Panic(locationReferenced, "Symbol reference already added for token");
+            }
+        }
+
         internal T Register<T>(T symbol) where T : ISymbolInternal
         {
-            Out.Debug(DebugCategory.Symbol, symbol.Declaration, $"Symbol {symbol.Type} ID {symbol.ID} ({symbol.Name})");
-            // CurrentScope.AddSymbol(symbol);
+            if (symbol.Declaration != null)
+            {
+                AddReference(symbol, symbol.Declaration);
+            }
+
+            if (CurrentScope.AddSymbol(symbol))
+            {
+                Out.Debug(DebugCategory.Symbol, symbol.Declaration, $"In Scope ID {CurrentScope.ID} Symbol {symbol.Type} ID {symbol.ID} ({symbol.Name})");
+            }
             return symbol;
         }
 
