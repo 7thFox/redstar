@@ -35,8 +35,9 @@ public class TestRun
         return this;
     }
 
-    public void Exectue()
+    public SymbolTable Exectue()
     {
+        SymbolTable st;
         var stderr = Console.Error;
         var messages = new List<CompilerMessage>();
 
@@ -46,7 +47,7 @@ public class TestRun
             {
 
                 Console.SetError(stdtest);
-                Symbols.Symbols.ParseStreams(SourceStreams);
+                st = Symbols.Symbols.ParseStreams(SourceStreams);
                 stdtest.Flush();
                 Console.SetError(stderr);
             }
@@ -66,7 +67,11 @@ public class TestRun
         }
 
         Assert.AreEqual(_expected.Count, messages.Count);
-        if (messages.Count == 1)
+        if (messages.Count == 0)
+        {
+            // continue
+        }
+        else if (messages.Count == 1)
         {
             _expected.Single().AssertMatchIgnoreMessage(messages.Single());
         }
@@ -80,6 +85,8 @@ public class TestRun
                 messages.Remove(found);
             }
         }
+
+        return st;
     }
 
     private string ParseSource(string name, string source)

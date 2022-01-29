@@ -64,25 +64,19 @@ public struct CompilerMessage
     public void AssertPerfectMatch(CompilerMessage? actual)
     {
         Assert.IsNotNull(actual);
-        Assert.AreEqual(HasErrorCode, actual.Value.HasErrorCode);
-        Assert.AreEqual(ErrorCodeString, actual.Value.ErrorCodeString);
-        Assert.AreEqual(ErrorCode, actual.Value.ErrorCode);
-        Assert.AreEqual(IsImplicit, actual.Value.IsImplicit);
-        Assert.AreEqual(FileName, actual.Value.FileName);
-        Assert.AreEqual(Line, actual.Value.Line);
-        Assert.AreEqual(Column, actual.Value.Column);
-        Assert.AreEqual(Message, actual.Value.Message);
+        AssertMatchIgnoreMessage(actual.Value);
+        Assert.AreEqual(Message, actual.Value.Message, "Message");
     }
 
     public void AssertMatchIgnoreMessage(CompilerMessage actual)
     {
-        Assert.AreEqual(HasErrorCode, actual.HasErrorCode);
-        Assert.AreEqual(ErrorCodeString, actual.ErrorCodeString);
-        Assert.AreEqual(ErrorCode, actual.ErrorCode);
-        Assert.AreEqual(IsImplicit, actual.IsImplicit);
-        Assert.AreEqual(FileName, actual.FileName);
-        Assert.AreEqual(Line, actual.Line);
-        Assert.AreEqual(Column, actual.Column);
+        Assert.AreEqual(HasErrorCode, actual.HasErrorCode, "HasErrorCode");
+        Assert.AreEqual(ErrorCodeString, actual.ErrorCodeString, "ErrorCodeString");
+        Assert.AreEqual(ErrorCode, actual.ErrorCode, "ErrorCode");
+        Assert.AreEqual(IsImplicit, actual.IsImplicit, "IsImplicit");
+        Assert.AreEqual(FileName, actual.FileName, "FileName");
+        Assert.AreEqual(Line, actual.Line, "Line");
+        Assert.AreEqual(Column, actual.Column, "Column");
     }
 
     public bool LocationMatch(CompilerMessage msg)

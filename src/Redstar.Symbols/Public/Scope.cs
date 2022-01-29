@@ -13,6 +13,8 @@ namespace Redstar.Symbols
         public long ID { get; }
         public IToken? Declaration { get; }
 
+        public IReadOnlyDictionary<string, ISymbol> DeclaredSymbols => _declaredSymbols;
+
         public ISymbol? Find(string identName)
         {
             if (_declaredSymbols.TryGetValue(identName, out var symbol))

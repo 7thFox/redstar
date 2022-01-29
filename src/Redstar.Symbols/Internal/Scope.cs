@@ -35,7 +35,6 @@ namespace Redstar.Symbols
         }
 
         private Dictionary<string, ISymbol> _declaredSymbols { get; } = new Dictionary<string, ISymbol>();
-        internal IReadOnlyDictionary<string, ISymbol> DeclaredSymbols => _declaredSymbols;
 
         internal ISymbol? FindInThisScope(string identName)
         {

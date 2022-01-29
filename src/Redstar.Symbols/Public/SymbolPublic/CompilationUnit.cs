@@ -11,6 +11,7 @@ namespace Redstar.Symbols
         IToken? ISymbol.Declaration => null;
 
         public string SourceName { get; }
+        public Scope UnitScope { get; }
         public ImmutableArray<Scope> Scopes { get; private set; }
     }
 }

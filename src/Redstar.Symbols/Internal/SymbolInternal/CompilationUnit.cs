@@ -10,7 +10,6 @@ namespace Redstar.Symbols
 {
     public partial class CompilationUnit
     {
-        internal Scope UnitScope { get; }
         private ImmutableArray<Scope>.Builder _scopes { get; }
 
         internal CompilationUnit(long id, string sourceName, Scope scope)
