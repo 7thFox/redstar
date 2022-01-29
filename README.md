@@ -1,3 +1,5 @@
+![Unit Tests](https://github.com/7thFox/redstar/actions/workflows/test.yml/badge.svg)
+
 # redstar
 
 Experimental language focused on the idea of developer-defined compile-time constraints.
