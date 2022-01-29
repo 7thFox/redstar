@@ -15,10 +15,12 @@ public class CompilerMessageParseTests
             HasErrorCode = false,
             ErrorCodeString = null,
             ErrorCode = null,
-            IsImplicit = false,
-            FileName = "examples/testscope/main.red",
-            Line = 7,
-            Column = 16,
+            Location = new Location()
+            {
+                FileName = "examples/testscope/main.red",
+                Line = 7,
+                Column = 16,
+            },
             Message = "Deferred reference resolution"
         }.AssertPerfectMatch(msg);
     }
@@ -32,10 +34,12 @@ public class CompilerMessageParseTests
             HasErrorCode = true,
             ErrorCodeString = "RS0001",
             ErrorCode = (ErrorCodes)1,
-            IsImplicit = false,
-            FileName = "examples/testscope/main.red",
-            Line = 3,
-            Column = 1,
+            Location = new Location()
+            {
+                FileName = "examples/testscope/main.red",
+                Line = 3,
+                Column = 1,
+            },
             Message = "x redefined"
         }.AssertPerfectMatch(msg);
     }
@@ -50,10 +54,7 @@ public class CompilerMessageParseTests
             HasErrorCode = false,
             ErrorCodeString = null,
             ErrorCode = null,
-            IsImplicit = true,
-            FileName = null,
-            Line = default,
-            Column = default,
+            Location = Location.Implicit,
             Message = "In Scope ID 1 Symbol CompilationUnit ID 14 (examples/testscope/main.red)"
         }.AssertPerfectMatch(msg);
     }

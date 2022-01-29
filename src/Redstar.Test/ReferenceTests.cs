@@ -14,36 +14,51 @@ public class ReferenceTests
     [TestMethod]
     public void SameScope()
     {
-        var st = new TestRun()
-            .AddSource("test.red",@"
+        AssertReference(@"
 x := 1;
 y := x;
-            ")
+            ",
+            ((2, 1), (2, 1)),
+            ((3, 6), (2, 1)));
+    }
+
+    [TestMethod]
+    public void FunctionParameter()
+    {
+        AssertReference(@"
+func test(int x, int y) string {
+    a := x;
+    b := y;
+    c := x + y;
+    return ""foobar"";
+}
+            ",
+            ((2, 15), (2, 15)),
+            ((2, 22), (2, 22)),
+            ((3, 10), (2, 15)),
+            ((4, 10), (2, 22)),
+            ((5, 10), (2, 15)),
+            ((5, 14), (2, 22)));
+    }
+
+    private static void AssertReference(string source, params ((int, int), (int,int))[] references)
+    {
+        var st = new TestRun()
+            .AddSource("test.red", source)
             .Exectue();
 
-        var symbol = st.FastFind(new Location()
+        foreach ((var toTest, var referencedDefinition) in references)
         {
-            FileName = "test.red",
-            Line = 3,
-            Column = 6,
-        });
+            var symbol = st.FastFind(new Location()
+            {
+                FileName = "test.red",
+                Line = toTest.Item1,
+                Column = toTest.Item2,
+            });
 
-        Assert.IsNotNull(symbol);
-        new Location()
-        {
-            FileName = "test.red",
-            Line = 2,
-            Column = 1,
-        }.AssertLocation(symbol.Declaration);
-    }
-}
-
-public static class TestingExtensions
-{
-    public static void AssertLocation(this Location expected, Location actual)
-    {
-        Assert.AreEqual(expected.FileName, actual.FileName, "FileName");
-        Assert.AreEqual(expected.Line, actual.Line, "Line");
-        Assert.AreEqual(expected.Column, actual.Column, "Column");
+            Assert.IsNotNull(symbol);
+            Assert.AreEqual("test.red", symbol.Declaration.FileName);
+            Assert.AreEqual(referencedDefinition, (symbol.Declaration.Line, symbol.Declaration.Column));
+        }
     }
 }

@@ -49,10 +49,12 @@ here's some text
             HasErrorCode = true,
             ErrorCodeString = "RS0231",
             ErrorCode = (ErrorCodes)231,
-            IsImplicit = false,
-            FileName = "test.txt",
-            Line = 1,
-            Column = 1,
+            Location = new Location()
+            {
+                FileName = "test.txt",
+                Line = 1,
+                Column = 1,
+            },
             Message = null,
         }.AssertPerfectMatch(run.ExpectedDiagnostics.Single());
     }
@@ -71,10 +73,12 @@ here's some text
             HasErrorCode = true,
             ErrorCodeString = "RS0231",
             ErrorCode = (ErrorCodes)231,
-            IsImplicit = false,
-            FileName = "test.txt",
-            Line = 1,
-            Column = 5,
+            Location = new Location()
+            {
+                FileName = "test.txt",
+                Line = 1,
+                Column = 5,
+            },
             Message = null,
         }.AssertPerfectMatch(run.ExpectedDiagnostics.Single());
     }
@@ -96,10 +100,12 @@ here's some text
             HasErrorCode = true,
             ErrorCodeString = "RS0231",
             ErrorCode = (ErrorCodes)231,
-            IsImplicit = false,
-            FileName = "test.txt",
-            Line = 3,
-            Column = 25,
+            Location = new Location()
+            {
+                FileName = "test.txt",
+                Line = 3,
+                Column = 25,
+            },
             Message = null,
         }.AssertPerfectMatch(run.ExpectedDiagnostics.Single());
     }

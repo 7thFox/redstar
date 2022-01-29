@@ -66,7 +66,6 @@ public class TestRun
             }
         }
 
-        Assert.AreEqual(_expected.Count, messages.Count);
         if (messages.Count == 0)
         {
             // continue
@@ -79,10 +78,16 @@ public class TestRun
         {
             foreach (var exp in _expected)
             {
+                // TODO JOSH: will fail erroneously if 2 errors at 1 location
                 var found = messages.FirstOrDefault(exp.LocationMatch);
-                Assert.IsNotNull(found);
+                Assert.IsNotNull(found, "Did not find expected error code");
                 exp.AssertMatchIgnoreMessage(found);
                 messages.Remove(found);
+            }
+
+            if (messages.Count > 0)
+            {
+                Assert.Fail(string.Join("\n", messages.Select(m => $"Unexpected {m.ErrorCodeString} at {m.Location}")));
             }
         }
 
@@ -239,11 +244,13 @@ public class TestRun
             // [|
             var msg = new CompilerMessage()
             {
-                FileName = name,
-                Line = line,
-                Column = col,
+                Location = new Location()
+                {
+                    FileName = name,
+                    Line = line,
+                    Column = col,
+                },
                 HasErrorCode = true,
-                IsImplicit = false,
             };
 
             Assert.IsTrue(chars.MoveNext());

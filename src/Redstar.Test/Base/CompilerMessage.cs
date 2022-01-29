@@ -10,10 +10,7 @@ public struct CompilerMessage
     public string? ErrorCodeString { get; set; }
     public ErrorCodes? ErrorCode { get; set; }
 
-    public bool IsImplicit { get; set; }
-    public string? FileName { get; set; }
-    public int Line { get; set; }
-    public int Column { get; set; }
+    public Location Location { get; set; }
 
     public string? Message { get; set; }
 
@@ -48,13 +45,13 @@ public struct CompilerMessage
             msg.ErrorCodeString = null;
         }
 
-        msg.IsImplicit = !string.IsNullOrEmpty(match.Groups[3].Value);
-        if (!msg.IsImplicit)
+        var isImplicit = !string.IsNullOrEmpty(match.Groups[3].Value);
+        msg.Location = isImplicit ? Location.Implicit : new Location()
         {
-            msg.FileName = match.Groups[4].Value;
-            msg.Line = int.Parse(match.Groups[5].Value);
-            msg.Column = int.Parse(match.Groups[6].Value);
-        }
+            FileName = match.Groups[4].Value,
+            Line = int.Parse(match.Groups[5].Value),
+            Column = int.Parse(match.Groups[6].Value),
+        };
 
         msg.Message = match.Groups[7].Value;
 
@@ -73,21 +70,18 @@ public struct CompilerMessage
         Assert.AreEqual(HasErrorCode, actual.HasErrorCode, "HasErrorCode");
         Assert.AreEqual(ErrorCodeString, actual.ErrorCodeString, "ErrorCodeString");
         Assert.AreEqual(ErrorCode, actual.ErrorCode, "ErrorCode");
-        Assert.AreEqual(IsImplicit, actual.IsImplicit, "IsImplicit");
-        Assert.AreEqual(FileName, actual.FileName, "FileName");
-        Assert.AreEqual(Line, actual.Line, "Line");
-        Assert.AreEqual(Column, actual.Column, "Column");
+        Location.AssertLocation(actual.Location);
     }
 
     public bool LocationMatch(CompilerMessage msg)
     {
-        if (IsImplicit)
+        if (Location.IsImplicit)
         {
-            return msg.IsImplicit;
+            return msg.Location.IsImplicit;
         }
 
-        return msg.FileName == FileName &&
-            msg.Line == Line &&
-            msg.Column == Column;
+        return msg.Location.FileName == Location.FileName &&
+            msg.Location.Line == Location.Line &&
+            msg.Location.Column == Location.Column;
     }
 }
