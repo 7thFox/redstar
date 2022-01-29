@@ -8,9 +8,9 @@ namespace Redstar.Symbols.Internal
         public SymbolType Type => SymbolType.Attribute;
         public long ID { get; }
         public string Name { get; }
-        public IToken Declaration { get; }
+        public Location Declaration { get; }
 
-        public AttributeSymbol(long id, string name, IToken decl)
+        public AttributeSymbol(long id, string name, Location decl)
         {
             ID = id;
             Name = name;

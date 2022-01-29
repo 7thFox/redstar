@@ -8,7 +8,7 @@ namespace Redstar.Symbols
         public long ID { get; }
         public SymbolType Type => SymbolType.CompilationUnit;
         string ISymbol.Name => SourceName;
-        IToken? ISymbol.Declaration => null;
+        Location ISymbol.Declaration => Location.Implicit;
 
         public string SourceName { get; }
         public Scope UnitScope { get; }

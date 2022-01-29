@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Microsoft.VisualBasic;
 
 namespace Redstar.Symbols
 {
@@ -13,14 +14,6 @@ namespace Redstar.Symbols
         long ID { get; }
         SymbolType Type { get; }
         string Name { get; }
-        IToken? Declaration { get; }
-    }
-
-    internal interface ISymbolInternal : ISymbol
-    {
-        void CopyInternalData()
-        {
-
-        }
+        Location Declaration { get; }
     }
 }

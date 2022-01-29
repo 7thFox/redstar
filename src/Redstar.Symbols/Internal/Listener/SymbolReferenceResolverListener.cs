@@ -36,7 +36,7 @@ namespace Redstar.Symbols.Internal.Listener
             if (symbol != null)
             {
                 _symbols.AddReference(symbol, context.Start);
-                Out.Debug(DebugCategory.Reference, context.Start, $"Type Reference to Symbol ID {symbol.ID} ({symbol.Name} @ {symbol.Declaration.Location()})");
+                Out.Debug(DebugCategory.Reference, context.Start, $"Type Reference to Symbol ID {symbol.ID} ({symbol.Name} @ {symbol.Declaration})");
             }
         }
 
@@ -51,7 +51,7 @@ namespace Redstar.Symbols.Internal.Listener
                 if (symbol != null)
                 {
                     _symbols.AddReference(symbol, context.Start);
-                    Out.Debug(DebugCategory.Reference, context.Start, $"Reference to Symbol ID {symbol.ID} ({symbol.Name} @ {symbol.Declaration.Location()})");
+                    Out.Debug(DebugCategory.Reference, context.Start, $"Reference to Symbol ID {symbol.ID} ({symbol.Name} @ {symbol.Declaration})");
                 }
                 else
                 {
@@ -72,7 +72,7 @@ namespace Redstar.Symbols.Internal.Listener
                 var symbol = scope.Find(ident.GetText());
                 if (symbol != null)
                 {
-                    Out.Debug(DebugCategory.Reference, ident.Start, $"Reference to Symbol ID {symbol.ID} ({symbol.Name} @ {symbol.Declaration.Location()})");
+                    Out.Debug(DebugCategory.Reference, ident.Start, $"Reference to Symbol ID {symbol.ID} ({symbol.Name} @ {symbol.Declaration})");
                 }
                 else
                 {

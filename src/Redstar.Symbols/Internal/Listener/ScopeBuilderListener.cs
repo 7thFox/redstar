@@ -20,7 +20,7 @@ namespace Redstar.Symbols.Internal.Listener
             _scopes.Push(_unit.UnitScope);
         }
 
-        private void EnterScope([NotNull] IToken location)
+        private void EnterScope([NotNull] Location location)
         {
             var scope = Scope(_scopes.Peek(), location);
             _unit.AddScope(scope);
@@ -29,7 +29,7 @@ namespace Redstar.Symbols.Internal.Listener
             _symbols.SetScope(scope);
         }
 
-        private void ExitScope(IToken location)
+        private void ExitScope(Location location)
         {
             var scope = _scopes.Pop();
             Out.Debug(DebugCategory.Scope, location, $"Exit Scope ID {scope.ID}");
@@ -39,25 +39,25 @@ namespace Redstar.Symbols.Internal.Listener
         public override void EnterFuncParameters([NotNull] RedstarParser.FuncParametersContext context)
         {
             // only add if we declare parameters
-            EnterScope(context.Start);
+            EnterScope(context.Start.Location());
         }
 
         public override void ExitFuncDecl([NotNull] RedstarParser.FuncDeclContext context)
         {
             if (context.funcParameters() != null)// only added for params
             {
-                ExitScope(context.Stop);
+                ExitScope(context.Stop.Location());
             }
         }
 
         public override void EnterBody([NotNull] RedstarParser.BodyContext context)
         {
-            EnterScope(context.Start);
+            EnterScope(context.Start.Location());
         }
 
         public override void ExitBody([NotNull] RedstarParser.BodyContext context)
         {
-            ExitScope(context.Stop);
+            ExitScope(context.Stop.Location());
         }
 
         public override void ExitStart([NotNull] RedstarParser.StartContext context)

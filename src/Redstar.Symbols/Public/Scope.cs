@@ -11,7 +11,7 @@ namespace Redstar.Symbols
     public partial class Scope
     {
         public long ID { get; }
-        public IToken? Declaration { get; }
+        public Location Declaration { get; }
 
         public IReadOnlyDictionary<string, ISymbol> DeclaredSymbols => _declaredSymbols;
 

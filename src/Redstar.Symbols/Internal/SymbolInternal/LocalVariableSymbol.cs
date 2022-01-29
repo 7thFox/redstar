@@ -13,9 +13,9 @@ namespace Redstar.Symbols.Internal
         public SymbolType Type => SymbolType.LocalVariable;
         public long ID { get; }
         public string Name { get; }
-        public IToken Declaration { get; }
+        public Location Declaration { get; }
 
-        public LocalVariableSymbol(long id, string name, IToken decl)
+        public LocalVariableSymbol(long id, string name, Location decl)
         {
             ID = id;
             Name = name;

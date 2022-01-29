@@ -21,22 +21,25 @@ namespace Redstar.Symbols
 
         internal void CreateImplicitSymbols()
         {
-            Register(SymbolFactory.Type("void", null));
-            Register(SymbolFactory.Type("byte", null));
-            Register(SymbolFactory.Type("short", null));
-            Register(SymbolFactory.Type("int", null));
-            Register(SymbolFactory.Type("long", null));
-            Register(SymbolFactory.Type("bool", null));
-            Register(SymbolFactory.Type("char", null));
-            Register(SymbolFactory.Type("string", null));
-            Register(SymbolFactory.Type("decimal", null));
-            Register(SymbolFactory.Type("float", null));
-            Register(SymbolFactory.Type("double", null));
+            Register(SymbolFactory.Type("void", Location.Implicit));
+            Register(SymbolFactory.Type("byte", Location.Implicit));
+            Register(SymbolFactory.Type("short", Location.Implicit));
+            Register(SymbolFactory.Type("int", Location.Implicit));
+            Register(SymbolFactory.Type("long", Location.Implicit));
+            Register(SymbolFactory.Type("bool", Location.Implicit));
+            Register(SymbolFactory.Type("char", Location.Implicit));
+            Register(SymbolFactory.Type("string", Location.Implicit));
+            Register(SymbolFactory.Type("decimal", Location.Implicit));
+            Register(SymbolFactory.Type("float", Location.Implicit));
+            Register(SymbolFactory.Type("double", Location.Implicit));
         }
 
-        private readonly Dictionary<IToken, ISymbol> _symbolByToken = new ();
+        private readonly Dictionary<Location, ISymbol> _symbolByToken = new ();
 
         internal void AddReference(ISymbol symbolReferenced, IToken locationReferenced)
+            => AddReference(symbolReferenced, locationReferenced.Location());
+
+        internal void AddReference(ISymbol symbolReferenced, Location locationReferenced)
         {
             if (!_symbolByToken.TryAdd(locationReferenced, symbolReferenced))
             {
@@ -46,7 +49,7 @@ namespace Redstar.Symbols
 
         internal T Register<T>(T symbol) where T : ISymbolInternal
         {
-            if (symbol.Declaration != null)
+            if (!symbol.Declaration.IsImplicit)
             {
                 AddReference(symbol, symbol.Declaration);
             }
@@ -62,49 +65,5 @@ namespace Redstar.Symbols
         {
             CurrentScope = scope;
         }
-
-//         internal void SetImplicitScope(Scope scope)
-//         {
-
-//         }
-// #region Creates
-//         internal ISymbol CreateLocalVariableSymbol(RedstarParser.IdentContext ident)
-//         {
-//             return Add(new LocalVariableSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
-//         }
-
-//         internal ISymbol CreateAttributeSymbol(RedstarParser.IdentContext ident)
-//         {
-//             return Add(new AttributeSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
-//         }
-
-//         internal ISymbol CreateFuncSymbol(RedstarParser.IdentContext ident)
-//         {
-//             return Add(new FuncSymbol(++_lastSymbolID, ident.GetText(), ident.Start));
-//         }
-
-//         internal long CreateScope()
-//         {
-//             var scope = new Scope(++_lastScopeID, CurrentScope);
-//             _scopeByID[scope.ID] = scope;
-//             return scope.ID;
-//         }
-// #endregion
-
-// #region Utilities
-//         internal long SetScope(long id)
-//         {
-//             CurrentScope = _scopeByID[id];
-//             return CurrentScope.ID;
-//         }
-// #endregion
-// #region Private
-//         private ISymbol Add(ISymbol symbol)
-//         {
-//             _symbols.Add(symbol.ID, symbol);
-//             CurrentScope.AddSymbol(symbol);
-//             return symbol;
-//         }
-// #endregion
     }
 }

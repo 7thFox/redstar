@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using Redstar.Parse;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Redstar.Symbols.Internal;
 
 namespace Redstar.Symbols
 {
@@ -14,21 +15,16 @@ namespace Redstar.Symbols
 
         // public ISymbol GetSymbol(long id) => _symbols[id];
 
-        // [return: AllowNull]
-        // public ISymbol Find(string symbolName)
-        // {
-        //     return FastFind(symbolName) ?? CurrentScope.Find(symbolName);
-        // }
-
         public ISymbol? FastFind(string symbolName)
         {
             return ImplicitScope.FindInThisScope(symbolName)
                 ?? CurrentScope.FindInThisScope(symbolName);
         }
 
-        public ISymbol? FastFind(IToken token)
+        public ISymbol? FastFind(IToken token) => FastFind(token.Location());
+        public ISymbol? FastFind(Location location)
         {
-            if (_symbolByToken.TryGetValue(token, out var symbol))
+            if (_symbolByToken.TryGetValue(location, out var symbol))
             {
                 return symbol;
             }

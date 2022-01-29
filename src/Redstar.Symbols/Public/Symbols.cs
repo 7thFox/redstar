@@ -14,15 +14,15 @@ namespace Redstar.Symbols
 
         public static SymbolTable ParseStreams(IEnumerable<ICharStream> streams)
         {
-            var implicitScope = Scope(null, null);
-            Out.Debug(DebugCategory.Scope, null, $"Implicit Scope ID {implicitScope.ID}");
+            var implicitScope = Scope(null, Location.Implicit);
+            Out.Debug(DebugCategory.Scope, Location.Implicit, $"Implicit Scope ID {implicitScope.ID}");
             var symbolTable = new SymbolTable(implicitScope);
             symbolTable.CreateImplicitSymbols();
 
             foreach (var stream in streams)
             {
-                var unit = Unit(stream.SourceName, Scope(symbolTable.ImplicitScope, null));
-                Out.Debug(DebugCategory.Scope, null, $"Unit Scope ID {unit.UnitScope.ID}");
+                var unit = Unit(stream.SourceName, Scope(symbolTable.ImplicitScope, Location.Implicit));
+                Out.Debug(DebugCategory.Scope, Location.Implicit, $"Unit Scope ID {unit.UnitScope.ID}");
                 symbolTable.Register(unit);
                 unit.Parse(symbolTable, stream);
             }

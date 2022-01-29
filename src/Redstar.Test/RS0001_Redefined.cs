@@ -14,8 +14,8 @@ public class RS0001_Redefined
     {
         new TestRun()
             .AddSource("test.red",@"
-x := 1
-[|RS0001||x := 2|]
+x := 1;
+[|RS0001||x := 2|];
             ")
             .Exectue();
     }
@@ -25,10 +25,10 @@ x := 1
     {
         new TestRun()
             .AddSource("test.red",@"
-x := 1
+x := 1;
 
 func foobar() {
-    [|RS0001||x := 2|]
+    [|RS0001||x := 2|];
 }
             ")
             .Exectue();
@@ -41,10 +41,10 @@ func foobar() {
             .AddSource("test.red",@"
 
 func foobar() {
-    [|RS0001||x := 2|]
+    [|RS0001||x := 2|];
 }
 
-x := 1
+x := 1;
             ")
             .Exectue();
     }
@@ -55,11 +55,11 @@ x := 1
         new TestRun()
             .AddSource("test.red",@"
 func foo() {
-    x := 2
+    x := 2;
 }
 
 func bar() {
-    x := 2
+    x := 2;
 }
             ")
             .Exectue();
@@ -70,7 +70,7 @@ func bar() {
     {
         new TestRun()
             .AddSource("test.red",@"
-x := 1
+x := 1;
 
 func foobar(string [|RS0001||x|]) {
 }
@@ -87,7 +87,7 @@ func foobar(string [|RS0001||x|]) {
 func foobar(string [|RS0001||x|]) {
 }
 
-x := 1
+x := 1;
             ")
             .Exectue();
     }
@@ -100,7 +100,7 @@ x := 1
             .AddSource("test.red",@"
 
 func foobar(string x) {
-    [|RS0001||x := 1|]
+    [|RS0001||x := 1|];
 }
             ")
             .Exectue();

@@ -45,6 +45,6 @@ while (argEnumerator.MoveNext())
 Out.DebugCategories = debugCategories;
 if (filePaths.Count == 0)
 {
-    filePaths.Add("/home/josh/src/redstar/examples/testscope/main.red");
+    filePaths.Add("/home/josh/src/redstar/examples/scratch/main.red");
 }
 Symbols.ParseFiles(filePaths);

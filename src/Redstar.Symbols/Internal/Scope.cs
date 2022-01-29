@@ -10,7 +10,7 @@ namespace Redstar.Symbols
 {
     public partial class Scope
     {
-        internal Scope(long id, Scope? parent, IToken? declaration)
+        internal Scope(long id, Scope? parent, Location declaration)
         {
             Parent = parent;
             Declaration = declaration;
