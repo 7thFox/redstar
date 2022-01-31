@@ -17,7 +17,7 @@ public class RS0001_Redefined
 x := 1;
 [|RS0001||x := 2|];
             ")
-            .Exectue();
+            .Execute();
     }
 
     [TestMethod]
@@ -31,7 +31,7 @@ func foobar() {
     [|RS0001||x := 2|];
 }
             ")
-            .Exectue();
+            .Execute();
     }
 
     [TestMethod]
@@ -46,7 +46,7 @@ func foobar() {
 
 x := 1;
             ")
-            .Exectue();
+            .Execute();
     }
 
     [TestMethod]
@@ -62,7 +62,7 @@ func bar() {
     x := 2;
 }
             ")
-            .Exectue();
+            .Execute();
     }
 
     [TestMethod]
@@ -75,7 +75,7 @@ x := 1;
 func foobar(string [|RS0001||x|]) {
 }
             ")
-            .Exectue();
+            .Execute();
     }
 
     [TestMethod]
@@ -89,7 +89,7 @@ func foobar(string [|RS0001||x|]) {
 
 x := 1;
             ")
-            .Exectue();
+            .Execute();
     }
 
 
@@ -103,6 +103,6 @@ func foobar(string x) {
     [|RS0001||x := 1|];
 }
             ")
-            .Exectue();
+            .Execute();
     }
 }

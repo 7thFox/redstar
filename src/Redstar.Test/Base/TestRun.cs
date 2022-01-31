@@ -35,7 +35,7 @@ public class TestRun
         return this;
     }
 
-    public SymbolTable Exectue()
+    public SymbolTable Execute()
     {
         SymbolTable st;
         var stderr = Console.Error;

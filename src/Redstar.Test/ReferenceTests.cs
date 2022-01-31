@@ -45,7 +45,7 @@ func test(int x, int y) string {
     {
         var st = new TestRun()
             .AddSource("test.red", source)
-            .Exectue();
+            .Execute();
 
         foreach ((var toTest, var referencedDefinition) in references)
         {
