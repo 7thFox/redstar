@@ -1,7 +1,6 @@
 using System.Linq;
 using Redstar.Parse;
-using Redstar.Symbols.Internal;
-using static Redstar.Symbols.Internal.SymbolFactory;
+using static Redstar.Symbols.SymbolFactory;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 

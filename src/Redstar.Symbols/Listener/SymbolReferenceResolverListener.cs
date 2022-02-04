@@ -4,10 +4,9 @@ using Redstar.Parse;
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using Antlr4.Runtime;
-using Redstar.Symbols.Internal;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Symbols.Internal.Listener
+namespace Redstar.Symbols.Listener
 {
     internal class SymbolReferenceResolverListener : RedstarBaseListener
     {

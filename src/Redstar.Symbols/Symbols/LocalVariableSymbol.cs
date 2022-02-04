@@ -8,22 +8,20 @@ using Antlr4.Runtime.Tree;
 
 namespace Redstar.Symbols
 {
-    public partial class TypeSymbol
+    public class LocalVariableSymbol : ITypedSymbolInternal
     {
-        internal TypeSymbol(long id)
-        {
-            ID = id;
-            Name = "typeref";
-            Declaration = Location.Implicit;
-            Type = this;
-        }
+        public SymbolKind Kind => SymbolKind.LocalVariable;
+        public long ID { get; }
+        public string Name { get; }
+        public Location Declaration { get; }
 
-        internal TypeSymbol(long id, string name, Location decl, TypeSymbol type)
+        public TypeSymbol? Type { get; internal set; }
+
+        public LocalVariableSymbol(long id, string name, Location decl)
         {
             ID = id;
             Name = name;
             Declaration = decl;
-            Type = type;
         }
 
         void ISymbolInternal.CopyInternalData() { }

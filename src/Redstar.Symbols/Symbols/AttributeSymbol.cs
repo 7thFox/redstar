@@ -1,9 +1,9 @@
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Symbols.Internal
+namespace Redstar.Symbols
 {
-    internal class AttributeSymbol : ISymbolInternal
+    public class AttributeSymbol : ISymbolInternal
     {
         public SymbolKind Kind => SymbolKind.Attribute;
         public long ID { get; }

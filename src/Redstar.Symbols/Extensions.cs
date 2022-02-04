@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Symbols.Internal
+namespace Redstar.Symbols
 {
     internal static class Extensions
     {

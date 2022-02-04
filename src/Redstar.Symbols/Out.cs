@@ -1,5 +1,4 @@
 using System;
-using Redstar.Symbols.Internal;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;

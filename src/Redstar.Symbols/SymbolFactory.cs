@@ -3,9 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using Redstar.Parse;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
-using static Redstar.Symbols.Internal.Assertions;
+using static Redstar.Symbols.Assertions;
 
-namespace Redstar.Symbols.Internal
+namespace Redstar.Symbols
 {
     internal static class SymbolFactory
     {

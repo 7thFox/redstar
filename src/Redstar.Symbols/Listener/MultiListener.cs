@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Symbols.Internal.Listener
+namespace Redstar.Symbols.Listener
 {
     public class MultiListener : RedstarBaseListener
     {

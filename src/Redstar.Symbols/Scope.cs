@@ -10,6 +10,29 @@ namespace Redstar.Symbols
 {
     public partial class Scope
     {
+        public long ID { get; }
+        public Location Declaration { get; }
+
+        public IReadOnlyDictionary<string, ISymbol> DeclaredSymbols => _declaredSymbols;
+
+        public ISymbol? Find(string identName)
+        {
+            if (_declaredSymbols.TryGetValue(identName, out var symbol))
+            {
+                return symbol;
+            }
+
+            if (Parent != null)
+            {
+                return Parent.Find(identName);
+            }
+
+            return null;
+        }
+    }
+
+    public partial class Scope
+    {
         internal Scope(long id, Scope? parent, Location declaration)
         {
             Parent = parent;

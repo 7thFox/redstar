@@ -3,9 +3,9 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Redstar.Symbols.Internal
+namespace Redstar.Symbols
 {
-    internal class FuncSymbol : ITypedSymbolInternal
+    public class FuncSymbol : ITypedSymbolInternal
     {
         public SymbolKind Kind => SymbolKind.Function;
         public long ID { get; }

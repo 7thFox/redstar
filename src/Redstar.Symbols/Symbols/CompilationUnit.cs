@@ -1,13 +1,25 @@
 using System.IO;
 using Redstar.Parse;
-using Redstar.Symbols.Internal.Listener;
-using Redstar.Symbols.Internal;
+using Redstar.Symbols.Listener;
+using Redstar.Symbols;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using System.Collections.Immutable;
 
 namespace Redstar.Symbols
 {
+    public partial class CompilationUnit : ISymbolInternal
+    {
+        public long ID { get; }
+        public SymbolKind Kind => SymbolKind.CompilationUnit;
+        string ISymbol.Name => SourceName;
+        Location ISymbol.Declaration => Location.Implicit;
+
+        public string SourceName { get; }
+        public Scope UnitScope { get; }
+        public ImmutableArray<Scope> Scopes { get; private set; }
+    }
+
     public partial class CompilationUnit
     {
         private ImmutableArray<Scope>.Builder _scopes { get; }

@@ -2,9 +2,9 @@
 // using System.Collections.Generic;
 // using System.Diagnostics.CodeAnalysis;
 // using Redstar.Parse;
-// using Redstar.Symbols.Internal;
+// using Redstar.Symbols;
 
-// namespace Redstar.Symbols.Internal.Listener
+// namespace Redstar.Symbols.Listener
 // {
 //     internal class ScopeWalkerListener : RedstarBaseListener
 //     {

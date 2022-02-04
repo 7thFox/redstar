@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Antlr4.Runtime;
 using Redstar.Parse;
-using Redstar.Symbols.Internal;
-using static Redstar.Symbols.Internal.SymbolFactory;
+using static Redstar.Symbols.SymbolFactory;
 
-namespace Redstar.Symbols.Internal.Listener
+namespace Redstar.Symbols.Listener
 {
     internal class ScopeBuilderListener : RedstarBaseListener
     {

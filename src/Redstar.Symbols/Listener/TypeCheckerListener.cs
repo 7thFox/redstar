@@ -5,9 +5,9 @@
 // using System.Collections.Generic;
 // using Antlr4.Runtime;
 // using Antlr4.Runtime.Tree;
-// using Redstar.Symbols.Internal;
+// using Redstar.Symbols;
 
-// namespace Redstar.Symbols.Internal.Listener
+// namespace Redstar.Symbols.Listener
 // {
 //     internal class TypeCheckerListener : RedstarBaseListener
 //     {
