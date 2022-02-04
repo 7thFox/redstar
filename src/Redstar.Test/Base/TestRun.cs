@@ -66,29 +66,42 @@ public class TestRun
             }
         }
 
-        if (messages.Count == 0)
+        foreach (var exp in _expected)
         {
-            // continue
-        }
-        else if (messages.Count == 1)
-        {
-            _expected.Single().AssertMatchIgnoreMessage(messages.Single());
-        }
-        else
-        {
-            foreach (var exp in _expected)
-            {
-                // TODO JOSH: will fail erroneously if 2 errors at 1 location
-                var found = messages.FirstOrDefault(exp.LocationMatch);
-                Assert.IsNotNull(found, "Did not find expected error code");
-                exp.AssertMatchIgnoreMessage(found);
-                messages.Remove(found);
-            }
+            // TODO JOSH: will fail erroneously if 2 errors at 1 location
+            var found = messages.Where(exp.LocationMatch).ToArray();
 
-            if (messages.Count > 0)
+            if (found.Length == 0)
             {
-                Assert.Fail(string.Join("\n", messages.Select(m => $"Unexpected {m.ErrorCodeString} at {m.Location}")));
+                Assert.Fail($"No errors at {exp.Location}");
             }
+            else if (found.Length == 1)
+            {
+                exp.AssertMatchIgnoreMessage(found.Single());
+                messages.Remove(found.Single());
+            }
+            else
+            {
+                var matchCode = found.Where(m => m.ErrorCode == exp.ErrorCode).ToArray();
+                if (matchCode.Length == 0)
+                {
+                    Assert.Fail($"Error {exp.ErrorCodeString} not found, but others were: {string.Join(", ", found.Select(m => m.ErrorCodeString))}");
+                }
+                else if (matchCode.Length > 1)
+                {
+                    Assert.Fail($"More than one {exp.ErrorCodeString} found at {exp.Location}");
+                }
+                else
+                {
+                    exp.AssertMatchIgnoreMessage(matchCode.Single());
+                    messages.Remove(matchCode.Single());
+                }
+            }
+        }
+
+        if (messages.Count > 0)
+        {
+            Assert.Fail(string.Join("\n", messages.Select(m => $"Unexpected {m.ErrorCodeString} at {m.Location}")));
         }
 
         return st;

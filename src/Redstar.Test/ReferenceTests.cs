@@ -43,6 +43,37 @@ func test(x: int, y: int) string {
             ((5, 14), yDef));
     }
 
+
+    [TestMethod]
+    public void FunctionWithOuterScope()
+    {
+        var xDef = (2, 1);
+        var yDef = (4, 11);
+        var zDef = (5, 5);
+
+        AssertReference(@"
+x := 5;
+
+func test(y: int) string {
+    z := 3;
+
+    a := y + x + z;
+
+    return ""foobar"";
+}
+
+b := x;
+c := [|RS0002||y|] + [|RS0002||z|];
+",
+            (xDef, xDef),
+            (yDef, yDef),
+            (zDef, zDef),
+            ((7, 10), yDef),
+            ((7, 14), xDef),
+            ((7, 18), zDef),
+            ((12, 6), xDef));
+    }
+
     private static void AssertReference(string source, params ((int, int), (int,int)?)[] references)
     {
         var st = new TestRun()
