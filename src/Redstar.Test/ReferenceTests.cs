@@ -25,23 +25,25 @@ y := x;
     [TestMethod]
     public void FunctionParameter()
     {
+        var xDef = (2, 11);
+        var yDef = (2, 19);
+
         AssertReference(@"
-func test(int x, int y) string {
+func test(x: int, y: int) string {
     a := x;
     b := y;
     c := x + y;
     return ""foobar"";
-}
-            ",
-            ((2, 15), (2, 15)),
-            ((2, 22), (2, 22)),
-            ((3, 10), (2, 15)),
-            ((4, 10), (2, 22)),
-            ((5, 10), (2, 15)),
-            ((5, 14), (2, 22)));
+}",
+            (xDef, xDef),
+            (yDef, yDef),
+            ((3, 10), xDef),
+            ((4, 10), yDef),
+            ((5, 10), xDef),
+            ((5, 14), yDef));
     }
 
-    private static void AssertReference(string source, params ((int, int), (int,int))[] references)
+    private static void AssertReference(string source, params ((int, int), (int,int)?)[] references)
     {
         var st = new TestRun()
             .AddSource("test.red", source)
@@ -56,9 +58,17 @@ func test(int x, int y) string {
                 Column = toTest.Item2,
             });
 
-            Assert.IsNotNull(symbol);
-            Assert.AreEqual("test.red", symbol.Declaration.FileName);
-            Assert.AreEqual(referencedDefinition, (symbol.Declaration.Line, symbol.Declaration.Column));
+            Assert.IsNotNull(symbol, $"{toTest}: no symbol found");
+            if (referencedDefinition == null)
+            {
+                Assert.IsTrue(symbol.Declaration.IsImplicit);
+            }
+            else
+            {
+                Assert.IsFalse(symbol.Declaration.IsImplicit);
+                Assert.AreEqual("test.red", symbol.Declaration.FileName);
+                Assert.AreEqual(referencedDefinition, (symbol.Declaration.Line, symbol.Declaration.Column));
+            }
         }
     }
 }

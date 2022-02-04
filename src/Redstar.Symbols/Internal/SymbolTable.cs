@@ -5,6 +5,7 @@ using Redstar.Symbols.Internal;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using System.Collections.Immutable;
+using static Redstar.Symbols.Internal.Assertions;
 
 namespace Redstar.Symbols
 {
@@ -41,6 +42,7 @@ namespace Redstar.Symbols
 
         internal void AddReference(ISymbol symbolReferenced, Location locationReferenced)
         {
+            Assert(!locationReferenced.IsImplicit);
             if (!_symbolByToken.TryAdd(locationReferenced, symbolReferenced))
             {
                 Out.Panic(locationReferenced, "Symbol reference already added for token");

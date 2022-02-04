@@ -5,6 +5,7 @@ using Redstar.Parse;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Redstar.Symbols.Internal;
+using static Redstar.Symbols.Internal.Assertions;
 
 namespace Redstar.Symbols
 {
@@ -24,6 +25,7 @@ namespace Redstar.Symbols
         public ISymbol? FastFind(IToken token) => FastFind(token.Location());
         public ISymbol? FastFind(Location location)
         {
+            Assert(!location.IsImplicit);
             if (_symbolByToken.TryGetValue(location, out var symbol))
             {
                 return symbol;
@@ -33,7 +35,28 @@ namespace Redstar.Symbols
 
         public ISymbol? FastFind([DisallowNull] RedstarParser.IdentContext ident)
         {
-            return FastFind(ident.Start) ?? FastFind(ident.GetText());
+            return FastFind(ident.Start) ?? Find(ident.GetText());
+        }
+
+        public ISymbol? Find(string symbolName)
+        {
+            var symbol = FastFind(symbolName);
+            if (symbol != null)
+            {
+                return symbol;
+            }
+
+            var scope = CurrentScope.Parent!;// CurrentScope already checked
+            while (scope.ID != ImplicitScope.ID)
+            {
+                symbol = scope.FindInThisScope(symbolName);
+                if (symbol != null)
+                {
+                    return symbol;
+                }
+            }
+
+            return null;
         }
 
         internal void CopyInternalData()

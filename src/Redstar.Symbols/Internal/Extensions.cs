@@ -26,4 +26,14 @@ namespace Redstar.Symbols.Internal
             return left.ID == right.ID;
         }
     }
+    internal static class Assertions
+    {
+        public static void Assert(bool success)
+        {
+            if (!success)
+            {
+                throw new Exception("Internal compiler assertion failed");
+            }
+        }
+    }
 }

@@ -33,7 +33,7 @@ namespace Redstar.Symbols.Internal.Listener
         {
             var scope = _scopes.Pop();
             Out.Debug(DebugCategory.Scope, location, $"Exit Scope ID {scope.ID}");
-            _symbols.SetScope(scope);
+            _symbols.SetScope(_scopes.Peek());
         }
 
         public override void EnterFuncParameters([NotNull] RedstarParser.FuncParametersContext context)
