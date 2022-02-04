@@ -1,6 +1,6 @@
 namespace Redstar.Symbols
 {
-    public enum SymbolType
+    public enum SymbolKind
     {
         Scope,
         CompilationUnit,

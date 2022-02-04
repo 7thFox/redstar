@@ -6,7 +6,7 @@ namespace Redstar.Symbols
     public partial class CompilationUnit : ISymbolInternal
     {
         public long ID { get; }
-        public SymbolType Type => SymbolType.CompilationUnit;
+        public SymbolKind Kind => SymbolKind.CompilationUnit;
         string ISymbol.Name => SourceName;
         Location ISymbol.Declaration => Location.Implicit;
 

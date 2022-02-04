@@ -27,6 +27,30 @@ namespace Redstar.Symbols
                 unit.Parse(symbolTable, stream);
             }
 
+            // Validate and finalize
+            symbolTable.CopyInternalData();
+            foreach (var unit in symbolTable.Units)
+            {
+                foreach (var scope in unit.Scopes)
+                {
+                    foreach (var symbol in scope.DeclaredSymbols.Values)
+                    {
+                        if (symbol is ISymbolInternal internalSymbol)
+                        {
+                            internalSymbol.CopyInternalData();
+                        }
+
+                        if (symbol is ITypedSymbol typedSymbol)
+                        {
+                            if (typedSymbol.Type == null)
+                            {
+                                Out.Panic(symbol.Declaration, $"Symbol '{symbol.Name}' has no type annotation");
+                            }
+                        }
+                    }
+                }
+            }
+
             return symbolTable;
         }
     }

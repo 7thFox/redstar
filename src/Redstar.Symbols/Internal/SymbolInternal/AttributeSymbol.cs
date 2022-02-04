@@ -5,7 +5,7 @@ namespace Redstar.Symbols.Internal
 {
     internal class AttributeSymbol : ISymbolInternal
     {
-        public SymbolType Type => SymbolType.Attribute;
+        public SymbolKind Kind => SymbolKind.Attribute;
         public long ID { get; }
         public string Name { get; }
         public Location Declaration { get; }

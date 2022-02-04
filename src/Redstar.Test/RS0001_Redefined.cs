@@ -71,7 +71,7 @@ func bar() {
             .AddSource("test.red",@"
 x := 1;
 
-func foobar(string [|RS0001||x|]) {
+func foobar([|RS0001||x|]: string) {
 }
             ")
             .Execute();
@@ -83,7 +83,7 @@ func foobar(string [|RS0001||x|]) {
         new TestRun()
             .AddSource("test.red",@"
 
-func foobar(string [|RS0001||x|]) {
+func foobar([|RS0001||x|]: string) {
 }
 
 x := 1;
@@ -98,7 +98,7 @@ x := 1;
         new TestRun()
             .AddSource("test.red",@"
 
-func foobar(string x) {
+func foobar(x: string) {
     [|RS0001||x := 1|];
 }
             ")

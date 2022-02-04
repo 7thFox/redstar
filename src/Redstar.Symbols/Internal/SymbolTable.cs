@@ -22,17 +22,19 @@ namespace Redstar.Symbols
 
         internal void CreateImplicitSymbols()
         {
-            Register(SymbolFactory.Type("void", Location.Implicit));
-            Register(SymbolFactory.Type("byte", Location.Implicit));
-            Register(SymbolFactory.Type("short", Location.Implicit));
-            Register(SymbolFactory.Type("int", Location.Implicit));
-            Register(SymbolFactory.Type("long", Location.Implicit));
-            Register(SymbolFactory.Type("bool", Location.Implicit));
-            Register(SymbolFactory.Type("char", Location.Implicit));
-            Register(SymbolFactory.Type("string", Location.Implicit));
-            Register(SymbolFactory.Type("decimal", Location.Implicit));
-            Register(SymbolFactory.Type("float", Location.Implicit));
-            Register(SymbolFactory.Type("double", Location.Implicit));
+            var typeref = SymbolFactory.TypeRefType();
+            Register(typeref);
+            Register(SymbolFactory.Type("void", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("byte", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("short", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("int", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("long", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("bool", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("char", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("string", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("decimal", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("float", Location.Implicit, typeref));
+            Register(SymbolFactory.Type("double", Location.Implicit, typeref));
         }
 
         private readonly Dictionary<Location, ISymbol> _symbolByToken = new ();
@@ -58,7 +60,7 @@ namespace Redstar.Symbols
 
             if (CurrentScope.AddSymbol(symbol))
             {
-                Out.Debug(DebugCategory.Symbol, symbol.Declaration, $"In Scope ID {CurrentScope.ID} Symbol {symbol.Type} ID {symbol.ID} ({symbol.Name})");
+                Out.Debug(DebugCategory.Symbol, symbol.Declaration, $"In Scope ID {CurrentScope.ID} Symbol {symbol.Kind} ID {symbol.ID} ({symbol.Name})");
             }
             return symbol;
         }

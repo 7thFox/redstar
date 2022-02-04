@@ -45,18 +45,5 @@ namespace Redstar.Symbols
 
             return null;
         }
-
-        // internal override string ToString()
-        // {
-        //     return ID.ToString() + "\n" + string.Join("\n", Children.Select(x => x.ToString(1)));
-        // }
-
-        // internal string ToString(int level)
-        // {
-        //     return new string(' ', level * 2) +
-        //         ID.ToString() +
-        //         "\n" +
-        //         string.Join("\n", Children.Select(x => x.ToString(level + 1)));
-        // }
     }
 }

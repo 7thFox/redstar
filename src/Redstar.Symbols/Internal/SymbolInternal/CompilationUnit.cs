@@ -36,6 +36,7 @@ namespace Redstar.Symbols
             buildProcess.Listeners.Add(new ScopeBuilderListener(symbolTable, this));
             buildProcess.Listeners.Add(new SymbolCreationListener(symbolTable));
             buildProcess.Listeners.Add(new SymbolReferenceResolverListener(symbolTable));
+            buildProcess.Listeners.Add(new TypeAnnotatorListener(symbolTable));
             buildProcess.EnterEveryRule(tree);
 
             // buildProcess.Listeners.Clear();

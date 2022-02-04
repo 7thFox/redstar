@@ -17,9 +17,13 @@ namespace Redstar.Symbols.Internal
             };
         }
 
-        [return: NotNull]
         public static ISymbol MustFind(this ISymbol? symbol)
             => symbol ?? throw new Exception("Could not find implicit symbol");
+
+
+        public static T MustFind<T>(this ISymbol? symbol)
+            where T : class, ISymbol
+            => (symbol as T) ?? throw new Exception("Could not find implicit symbol");
 
         public static bool SymbolEqual(this ISymbol left, ISymbol right)
         {

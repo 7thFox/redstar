@@ -4,5 +4,7 @@ namespace Redstar.Symbols
     {
         Redefined = 1,
         UnresolvedReference,
+        ExpectedTypeName,
+        TypeMismatch,
     }
 }

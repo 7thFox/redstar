@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Redstar.Parse;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using static Redstar.Symbols.Internal.Assertions;
 
 namespace Redstar.Symbols.Internal
 {
@@ -30,9 +31,16 @@ namespace Redstar.Symbols.Internal
             return new Scope(++_symbolID, parent, declaration);
         }
 
-        public static TypeSymbol Type(string name, Location location)
+        public static TypeSymbol Type(string name, Location location, TypeSymbol typeSymbol)
         {
-            return new TypeSymbol(++_symbolID, name, location);
+            Assert(typeSymbol.Name == "typeref");
+            Assert(typeSymbol.Declaration.IsImplicit);
+            return new TypeSymbol(++_symbolID, name, location, typeSymbol);
+        }
+
+        public static TypeSymbol TypeRefType()
+        {
+            return new TypeSymbol(++_symbolID);
         }
 
         public static CompilationUnit Unit(string path, Scope scope)

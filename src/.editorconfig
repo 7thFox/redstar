@@ -1,9 +1,31 @@
 [*.cs]
 
-dotnet_naming_symbols.private_symbols.applicable_kinds           = property,field
-dotnet_naming_symbols.private_symbols.applicable_accessibilities = private
+# private (non-const): _fieldName
 dotnet_naming_style.private_style.capitalization = camel_case
 dotnet_naming_style.private_style.required_prefix = _
-dotnet_naming_rule.public_members_must_be_capitalized.symbols   = private_symbols
-dotnet_naming_rule.public_members_must_be_capitalized.style    = private_style
-dotnet_naming_rule.public_members_must_be_capitalized.severity = warning
+dotnet_naming_symbols.private_symbols.applicable_kinds           = property,field
+dotnet_naming_symbols.private_symbols.applicable_accessibilities = private
+dotnet_naming_rule.private_symbols_rule.symbols   = private_symbols
+dotnet_naming_rule.private_symbols_rule.style    = private_style
+dotnet_naming_rule.private_symbols_rule.severity = warning
+
+# public and/or const: FieldName
+dotnet_naming_style.public_style.capitalization = pascal_case
+dotnet_naming_symbols.public_symbols.applicable_kinds           = property,field
+dotnet_naming_symbols.public_symbols.applicable_accessibilities = public, internal, protected
+dotnet_naming_rule.public_symbols_rule.symbols  = public_symbols
+dotnet_naming_rule.public_symbols_rule.style    = public_style
+dotnet_naming_rule.public_symbols_rule.severity = warning
+
+# any const: ALL_CAPS
+dotnet_naming_style.all_caps.capitalization = all_upper
+dotnet_naming_style.all_caps.word_separator = _
+dotnet_naming_symbols.const_symbols.applicable_kinds           = property,field
+dotnet_naming_symbols.const_symbols.applicable_accessibilities = *
+dotnet_naming_symbols.const_symbols.required_modifiers = const
+dotnet_naming_rule.const_symbols_rule.symbols  = const_symbols
+dotnet_naming_rule.const_symbols_rule.style    = all_caps
+dotnet_naming_rule.const_symbols_rule.severity = warning
+
+
+

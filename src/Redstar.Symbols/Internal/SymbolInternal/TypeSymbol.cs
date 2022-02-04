@@ -6,20 +6,24 @@ using System.Collections.Generic;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Redstar.Symbols.Internal
+namespace Redstar.Symbols
 {
-    internal class TypeSymbol : ISymbolInternal
+    public partial class TypeSymbol
     {
-        public SymbolType Type => SymbolType.Type;
-        public long ID { get; }
-        public string Name { get; }
-        public Location Declaration { get; }
+        internal TypeSymbol(long id)
+        {
+            ID = id;
+            Name = "typeref";
+            Declaration = Location.Implicit;
+            Type = this;
+        }
 
-        internal TypeSymbol(long id, string name, Location decl)
+        internal TypeSymbol(long id, string name, Location decl, TypeSymbol type)
         {
             ID = id;
             Name = name;
             Declaration = decl;
+            Type = type;
         }
 
         void ISymbolInternal.CopyInternalData() { }
