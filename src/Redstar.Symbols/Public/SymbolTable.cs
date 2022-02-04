@@ -54,6 +54,7 @@ namespace Redstar.Symbols
                 {
                     return symbol;
                 }
+                scope = scope.Parent!;
             }
 
             return null;
